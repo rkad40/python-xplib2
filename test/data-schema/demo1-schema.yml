@@ -1,0 +1,81 @@
+Root: 
+    class: dict
+    keys:
+    - {name: 'Info', rule: 'Info', required: True}
+    - {name: 'Data', rule: 'Data', required: True}
+    root: True
+Info:
+    class: dict
+    keys:
+    - {name: 'Type', rule: 'GenericValue', required: True}
+    - {name: 'Version', rule: 'GenericValue', required: True}
+    - {name: '\w+', regx: True, rule: 'GenericValue', required: False}    
+    render: {yaml: {padding-before: True, padding-after-comment: True}}
+    comment: |
+        Info
+        ----
+        File type and version information.
+Data:
+    class: dict
+    keys:
+    - {name: 'File Types', rule: 'FileTypes', required: True}
+    - {name: 'Address', rule: 'Address', required: True}
+    - {name: 'Instructions', rule: 'GenericValue', required: False}
+    - {name: 'Validated', rule: 'Validated', required: True}
+    - {name: 'Devices', rule: 'Devices', required: True}
+    - {name: 'Scripts', rule: 'Scripts', required: False}
+    render: {yaml: {padding-before: True, padding-after-comment: True}}
+    comment: |
+        Data
+        ----
+        All data elements go here.
+FileTypes:
+    class: dict
+    keys:
+    - {name: 'Excel', rule: 'FileInfo', required: False}
+    - {name: 'Word', rule: 'FileInfo', required: False}
+    - {name: 'Power Point', rule: 'FileInfo', required: False}
+    - {name: '\w+', regx: True, rule: 'FileInfo', required: False}
+Address:
+    class: dict
+    keys:
+    - {name: 'Home', rule: 'GenericValue', required: True}
+    - {name: '\w+', regx: True, rule: 'GenericValue', required: False}
+Validated:
+    class: bool 
+    default: False
+Devices:
+    class: dict
+    keys:
+    - {name: '\w+', regx: True, rule: 'Device', required: False}
+Device:    
+    class: dict
+    keys:
+    - {name: 'Technology', rule: 'GenericValue', required: False}
+    - {name: 'Program Paths', rule: 'GenericList', required: False}
+    - {name: 'MTR Releases', rule: 'GenericDict', required: False}
+    - {name: 'Comment', rule: 'GenericValue', required: False}
+Scripts:
+    class: list
+    rule: Script
+Script:
+    class: dict
+    keys:
+    - {name: 'Name', rule: 'GenericValue', required: True}
+    - {name: 'Path', rule: 'GenericValue', required: True}
+    - {name: 'Type', rule: 'GenericValue', required: True}
+    - {name: 'Version', rule: 'GenericValue', required: True}
+    render: {yaml: {collapse: True}}    
+FileInfo:
+    class: dict
+    keys:
+    - {name: 'API', rule: 'GenericValue', required: True}
+    - {name: 'Extensions', rule: 'GenericList', required: True}
+    - {name: 'Comment', rule: 'GenericValue', required: True, default: ''}
+    render: {yaml: {collapse: True}}    
+GenericValue: 
+    class: str
+GenericList:
+    class: list
+GenericDict:
+    class: dict

@@ -1,0 +1,36 @@
+Root: 
+  class: dict
+  keys:
+  - {name: 'Type', rule: 'Type', required: True}
+  - {name: 'Version', rule: 'Version', required: True}
+  - {name: 'Comment', rule: 'Comment', required: False}
+  root: True
+Type: 
+  class: str
+  equals: SQLiteDatabaseObject
+Version:
+  class: str
+Comment:
+  class: str
+
+Root:
+  class: dict
+  keys:
+  - {name: '(\w+)', regx: True, rule: 'Table', required: False, min-count: 1}
+  root: True
+Table:
+  class: dict
+  - {name: 'Header', rule: 'Header', required: True}
+  - {name: 'DataRows', rule: 'DataRows', required: True}
+  - {name: 'Comment', rule: 'Comment', required: False}
+Header:
+  class: dict
+  - {name: 'ColumnOrder', rule: 'ColumnOrder', required: True}
+  - {name: 'Definition', rule: 'Definition', required: True}
+DataRows:
+  class: list
+  rule: DataRow
+DataRow:
+  - {name: '(\w+)', regx: True, rule: 'Table', required: False, min-count: 1}
+
+

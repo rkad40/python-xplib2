@@ -1,0 +1,52 @@
+---
+Info:
+  Type: YML Sample Data
+  Version: 1.2
+Data:
+  File Types:
+    Excel:  {Scripts: True,  Extensions: [XLS, XLSX, XLSM]}
+    Word:   {Scripts: False, Extensions: [DOC, DOCX]}
+    SQLite: {Scripts: True,  Extensions: [DB3, DB]}
+  Address: 
+    Home: |
+      3590 FM 535
+      Red Rock, TX 78662
+    Work: |
+      6501 William Cannon Dr.
+      Austin, TX 78735
+  Instructions: >
+    This is an example of text that should fold.
+    Folding means that the newlines are removed and replaced with spaces.
+    If you see newlines after rendering, this did not work as expected.
+  Devices:
+    LS1028A: &LS1028A
+      Technology: C28
+      Program Paths:
+      - 'L:\users\rodney\prog\1.0'
+      - 'C:\Programs\Local\LS1028\program'
+      Comment: Uses LS1028A anchor / alias.
+      MTR Releases:
+        191018A: 
+          - Added ability to burn and test DisplayDisable to the program using the normal MTR hooks.
+          - Updated VAL patterns to work around the VAL write/read issue.
+          - 'Other miscellaneous updates: MTR_SDK_VERSION updated from 2.010.190529.72 to 2.011.190829.74.'
+        190313A: Changed Plat 400MHz slow back to 300MHz.  
+        190304A:
+          Updated files:
+            src/MTR_Module.bas: MTR Test Methodology version 2.004.190304.53.
+            src/SF_bist.txt: Changed Plat slow speed from 300MHz to 400MHz.
+            src/Tests_MTR.txt: Added and initialized Typ speed flag (z_Speed_Typ) to those u_bist_MtrFlowConfig instances where it was missing and needed.
+    LS1028: *LS1028A
+    LX2160:
+      Technology: 16FF
+      Program Paths:
+      - 'P:\users\rodney\prog\1.0'
+      - 'C:\Programs\Local\LX2160\1.0'
+      MTR Releases:
+        190403A: >
+          Updated TCAM prodall pattern from version AB to AC.  
+          Updated patterns write SFTO to 0x30 which improves half speed VMINS by >30mV.
+Scripts:
+- {Name: Build Program, Path: C:/Perl/Bin/Build.pl, Type: Perl, Version: 2.001}
+- {Name: YAML Parser, Path: C:/Python/Bin/Parse.py, Type: Python, Version: 4.012}
+- {Name: MTR Program Manager, Path: C:/Tools/MTR/Main.js, Type: Node.js, Version: 1.007}

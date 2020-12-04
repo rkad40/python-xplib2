@@ -1,0 +1,29 @@
+# Must See TV
+---
+# Sitcom
+- Name: Modern Family
+  Rating: 4.2
+  StillRunning: True
+  CastMembers: 
+  - {Character: 'Jay Pritchett', PlayedBy: 'Ed ONeill', Role: 'patriarch, father'}
+  - {Character: 'Claire Dunphy', PlayedBy: 'Julie Brown', Role: 'Jay''s daughter'}
+  - {Character: 'Mitchell Pritchett', PlayedBy: 'Jesse Tyler Ferguson', Role: 'Jay''s son'}
+  - {Character: 'Phil Dunphy', PlayedBy: 'Ty Burrell', Role: 'Claire''s husband'}
+  Networks: 
+    NBC: [Monday, Friday]
+    ABC: [Wednesday]
+    TBS: [Monday, Thursday, Friday]
+  Reviews: [I love it!, Never miss an episode., Early seasons were much better.]
+  Episodes: {Others: {xxx: 111, yyy: 222, zzz: 333}, S08 E22: 'The Graduates', S10 E16: 'Red Alert', S11 E04: 'Pool Party'}
+# Sitcom
+- Name: The Office
+  Rating: 2.0
+  StillRunning: False
+  CastMembers: 
+  - {Character: 'Michael Scott', PlayedBy: 'Steve Carell', Role: manager}
+  - {Character: 'Jim Halpert', PlayedBy: 'John Krasinski', Role: salesman}
+  - {Character: 'Pam Beesly', PlayedBy: 'Jenna Fisher', Role: secretary}
+  Networks: 
+    ABC: [Thursday]
+    OWN: [Saturday, Sunday]
+    TBS: [Tuesday, Wednesday]

@@ -1,0 +1,64 @@
+Sitcoms: 
+    class: list
+    rule: Sitcom
+    root: true
+    comment: Must See TV
+Sitcom: 
+    class: dict
+    keys: 
+    - {name: 'Name', rule: 'GenericValue', required: true, comment: 'Sitcom name'}
+    - {name: 'Rating', rule: 'Rating', required: true}
+    - {name: 'StillRunning', rule: 'Boolean', required: false}
+    - {name: 'CastMembers', rule: 'CastMembers', required: true}
+    - {name: 'Networks', rule: 'Network'}
+    - {name: 'Reviews', rule: 'GenericList'}
+    - {name: 'Episodes', rule: 'GenericDict'}
+    - {name: 'Comment', rule: 'GenericValue'}
+    default: {}
+    comment: Sitcom
+CastMembers: 
+    class: list
+    rule: CastMember
+    default: []
+    render: {yaml: {padding: true}}    
+CastMember: 
+    class: dict
+    keys: 
+    - {name: 'Character', rule: 'Person', required: true}
+    - {name: 'PlayedBy', rule: 'Person', required: true}
+    - {name: 'Role', rule: 'GenericValue', required: true}
+    default: {}
+    render: {yaml: {collapse: true}}    
+Network: 
+    class: dict
+    keys:
+    - {name: 'NBC', rule: 'Days', required: false}
+    - {name: 'ABC', rule: 'Days', required: false}
+    - {name: 'CBS', rule: 'Days', required: false}
+    - {name: '\w+', regx: true, rule: 'Days', required: false}
+Boolean: 
+    class: bool
+    default: false
+Rating:
+    class: float
+    min-value: 0
+    max-value: 5
+    default: 2
+    allow-null: true
+Days: 
+    class: list
+    rule: Day
+    render: {yaml: {collapse: true}}
+GenericValue: 
+    class: str
+GenericList:
+    class: list
+    render: {yaml: {collapse: true}}    
+GenericDict:
+    class: dict
+    render: {yaml: {collapse: true}}
+Person: 
+    class: str 
+Day: 
+    class: str
+    validation-func : validate_day

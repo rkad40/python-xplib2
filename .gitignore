@@ -1,0 +1,6 @@
+/.hg
+/.vscode
+/__pycache__
+/__test__
+.hgignore
+__pycache__/

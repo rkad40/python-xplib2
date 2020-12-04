@@ -1,0 +1,37 @@
+- Name: 'Modern Family'
+  Rating: 4.2
+  StillRunning: true
+  CastMembers: 
+    - {Character: 'Jay Pritchett', PlayedBy: 'Ed ONeill', Role: 'patriarch, father'}
+    - {Character: 'Claire Dunphy', PlayedBy: 'Julie Brown', Role: 'Jay''s daughter'}
+    - {Character: 'Mitchell Pritchett', PlayedBy: 'Jesse Tyler Ferguson', Role: 'Jay''s son'}
+    - {Character: 'Phil Dunphy', PlayedBy: 'Ty Burrell', Role: 'Claire''s husband'}
+  Networks:
+    NBC: [monday, friday]
+    ABC: [wednesday]
+    TBS: [monday, thursday, friday]
+  Reviews:
+  - 'I love it!'
+  - 'Never miss an episode.'
+  - 'Early seasons were much better.'
+  Episodes:
+    S10 E16: Red Alert
+    S11 E04: Pool Party
+    S08 E22: The Graduates
+    Others:
+      xxx: 111
+      yyy: 222
+      zzz: 333
+    
+- Name: 'The Office'
+  Rating: ~
+  StillRunning: false
+  CastMembers: 
+    - {Character: 'Michael Scott', PlayedBy: 'Steve Carell', Role: 'manager'}
+    - {Character: 'Jim Halpert', PlayedBy: 'John Krasinski', Role: 'salesman'}
+    - {Character: 'Pam Beesly', PlayedBy: 'Jenna Fisher', Role: 'secretary'}
+  Networks:
+    ABC: [thursday]
+    TBS: [tuesday, wednesday]
+    OWN: [saturday, sunday]
+
