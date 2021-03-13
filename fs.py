@@ -28,10 +28,12 @@ def open_file(path, mode='r', encoding="utf8"):
     ## Returns
     file stream (use `close()` to close when done)
   '''
-  f = open(path, mode, encoding)
+  f = open(path, mode=mode, encoding=encoding)
   return f
 
-def read_file(path, to_string = False, encoding="utf8"):
+fopen = open_file
+
+def read_file(path, to_string = False, to_iter = False, encoding="utf8"):
   '''
     ## Description
     Read file and return a list of lines.
@@ -44,16 +46,25 @@ def read_file(path, to_string = False, encoding="utf8"):
     ## Arguments
     - `path`: file as str
     - `to_string`: optional bool; if True return content as a string
+    - `to_iter`: optional bool; if True return content is an iterator
     - `encoding='utf8'`: encoding
     
     ## Returns
     list of lines each of typ str (or a single string if to_string is True)
   '''
   f = open(path, 'r', encoding="utf8")
+  if to_iter:
+    return(f)
   if to_string:
-    return("".join(f.readlines()))
+    text = "".join(f.readlines())
+    f.close()
+    return(text)
   else:
-    return(f.readlines())
+    lines = f.readlines()
+    f.close()
+    return(lines)
+
+fread = read_file
 
 def write_file(path, content):
   '''
@@ -75,10 +86,14 @@ def write_file(path, content):
   f = open(path, 'w')
   if type(content) == str:
     f.write(content)
+    f.close()
   elif type(content) == list:
     f.writelines(content)
+    f.close()
   else:
     raise Exception('Invalid content of type "{}"; must be "str" or "list".'.format(type(content).__name__))
+
+fwrite = write_file
 
 def delete_file(path):
   '''
@@ -98,6 +113,9 @@ def delete_file(path):
   '''  
   os.remove(path)
 
+fdelete = delete_file
+fdel = delete_file
+
 def delete_dir(path):
   '''
     ## Description
@@ -115,6 +133,9 @@ def delete_dir(path):
     nothing
   '''  
   shutil.rmtree(path)
+
+ddelete = delete_dir
+ddel = delete_dir
 
 def write_file_if_changed(path, content, create_dir=True, mode=None):
   '''
@@ -155,6 +176,8 @@ def write_file_if_changed(path, content, create_dir=True, mode=None):
       shutil.move(temp_file, path)
       return('Upated file "{}".'.format(path))
 
+fwritei = write_file_if_changed
+
 def rename_file(orig_file, new_file):
   '''
     ## Description
@@ -175,6 +198,8 @@ def rename_file(orig_file, new_file):
   shutil.move(orig_file, new_file)
   return(new_file)
 
+rename = rename_file
+
 def get_file_name(path):
   '''
     ## Description
@@ -193,6 +218,8 @@ def get_file_name(path):
   '''
   rval = os.path.basename(path)
   return(rval)
+
+fname = get_file_name
   
 def get_root_name(path):
   '''
@@ -214,6 +241,36 @@ def get_root_name(path):
   rval = os.path.splitext(rval)[0]
   return(rval)
 
+froot = get_root_name
+
+def prepend_root_name(path, val):
+  '''
+    ## Description
+    Prepend val to the file root name (before the root name).
+    
+    ## Usage
+    ```
+    orig_file = '/home/files/test.txt'
+    temp_file = fs.append_root_name(orig_file, '.')
+    # now temp_file = 'home/files/.test.txt'
+    ```
+
+    ## Arguments
+    - `path`: file as str
+    - `val`: token to prepend to root name
+    
+    ## Returns
+    File name as string.
+  '''
+  dir = get_dir_name(path)
+  name = get_file_name(path)
+  root = get_root_name(name)
+  ext = get_ext(name)
+  rval = join_names(dir, val + root + '.' + ext)
+  return(rval)
+
+prepend = prepend_root_name
+  
 def append_root_name(path, val):
   '''
     ## Description
@@ -239,6 +296,8 @@ def append_root_name(path, val):
   ext = get_ext(name)
   rval = join_names(dir, root + val + '.' + ext)
   return(rval)
+
+append = append_root_name
   
 def remove_ext(path):
   '''
@@ -259,6 +318,8 @@ def remove_ext(path):
   rval = path
   rval = re.sub(r'\.\w+$','',rval)
   return(rval)
+
+rmext = remove_ext
 
 def get_ext(path):
   '''
@@ -281,6 +342,34 @@ def get_ext(path):
   ext = m.group(1) if m else ""
   ext = ext.lower()
   return(ext)
+
+ext = get_ext
+
+def fsplit(path):
+  '''
+    ## Description
+    Split file name return tuple of root name and ext (lower case).
+    
+    ## Usage
+    ```
+    root,ext = fs.fsplit(path)
+    ```
+
+    ## Arguments
+    - `path`: file as str
+    
+    ## Returns
+    Tuple consisting of root name and ext (lower case).
+  '''
+  rval = path
+  m = re.search(r'^(.*?)\.(\w+)$',rval)
+  if m:
+    root = m.group(1)
+    ext = m.group(2).lower()
+  else:
+    root = path
+    ext = ''
+  return(root,ext)
 
 def get_dir_name(path,count=1):
   '''
@@ -305,6 +394,8 @@ def get_dir_name(path,count=1):
     count -= 1
   return(path)
   
+dname = get_dir_name
+
 def fix_path_name(*path):
   '''
     ## Description
@@ -327,6 +418,8 @@ def fix_path_name(*path):
   path = os.path.normpath(path)
   return(path)
 
+fix = fix_path_name
+
 def get_unix_path(path):
   '''
     ## Description
@@ -346,6 +439,8 @@ def get_unix_path(path):
   path = re.sub(r'\\', r'/', path)
   return(path)
 
+unix = get_unix_path
+
 def file_exists(path):
   '''
     ## Description
@@ -363,6 +458,8 @@ def file_exists(path):
     True if file exists, False otherwise.
   '''
   return(os.path.exists(path))
+
+exists = file_exists
 
 def dir_exists(path):
   '''
@@ -402,6 +499,8 @@ def get_rel_path(abs_path, base_path):
   if is_file(base_path): base_path = get_dir_name(base_path)
   return(os.path.relpath(abs_path, base_path))
 
+rel = get_rel_path
+
 def get_app_data_path(abs_path, base_path):
   '''
     ## Description
@@ -415,6 +514,8 @@ def get_app_data_path(abs_path, base_path):
     absolute path to %APPDATA%
   '''
   return(get_abs_path(os.getenv('APPDATA')))
+
+adir = get_app_data_path
 
 def get_cwd():
   '''
@@ -431,6 +532,8 @@ def get_cwd():
   '''
   return(os.getcwd())
 
+cwd = get_cwd
+
 def change_dir(dir_path):
   '''
     ## Description
@@ -445,6 +548,8 @@ def change_dir(dir_path):
     nothing
   '''
   return(os.chdir(dir_path))
+
+cd = change_dir
 
 def get_script_file():
   '''
@@ -463,6 +568,8 @@ def get_script_file():
   if not is_abs_path(script_file): script_file = get_abs_path(script_file)
   return(script_file)
 
+sfile = get_script_file
+
 def get_script_dir():
   '''
     ## Description
@@ -477,6 +584,8 @@ def get_script_dir():
     Absolute path to current script file directory.
   '''
   return(get_dir_name(get_script_file()))
+
+sdir = get_script_dir
 
 def join_names(*args):
   '''
@@ -496,6 +605,8 @@ def join_names(*args):
   '''
   return(os.path.join(*args))
 
+join = join_names
+
 def is_abs_path(path):
   '''
     ## Description
@@ -513,6 +624,8 @@ def is_abs_path(path):
     True if absolute path, else False.
   '''
   return(os.path.isabs(path))
+
+isabs = is_abs_path
 
 def is_file(path):
   '''
@@ -532,6 +645,8 @@ def is_file(path):
   '''
   return(os.path.isfile(path))
 
+isfile = is_file
+
 def is_dir(path):
   '''
     ## Description
@@ -549,6 +664,8 @@ def is_dir(path):
     True if a directory, False otherwise.
   '''
   return(os.path.isdir(path))
+
+isdir = is_dir
 
 def get_abs_path(path, relpath=None):
   '''
@@ -578,6 +695,8 @@ def get_abs_path(path, relpath=None):
     path = os.path.join(relpath, path)
     path = os.path.normpath(path)
     return(path)
+
+abs = get_abs_path
 
 def get_files(paths,regx=r'.*',rec=True,must_exist=True):
   '''
@@ -613,6 +732,8 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
         yield(os.path.join(root,file))
       if not rec: break
 
+getfiles = get_files
+
 def get_dirs(paths,regx=r'.*'):
   '''
     ## Description
@@ -643,6 +764,8 @@ def get_dirs(paths,regx=r'.*'):
         yield(os.path.join(root,dir_name))
       break
 
+getdirs = get_dirs
+
 def create_dir(path, mode=0x775):
   '''
     ## Description
@@ -666,6 +789,8 @@ def create_dir(path, mode=0x775):
   else:
     return("Directory \"{}\" already exists.".format(path))
 
+mkdir = create_dir
+
 def files_are_identical(file1, file2):
   '''
     ## Description
@@ -684,6 +809,8 @@ def files_are_identical(file1, file2):
     True if identical, Falser otherwise.
   '''  
   return (filecmp.cmp(file1, file2, shallow=False))
+
+fsame = files_are_identical
 
 def copy_file(src, tar, create_dirs=False, meta=False):
   '''
@@ -711,7 +838,9 @@ def copy_file(src, tar, create_dirs=False, meta=False):
     shutil.copy2(src, tar)
   return("Copied file \"{}\" to \"{}\".".format(src, tar))
 
-def copy_dir_if_changed(src, tar, omit=None, verbose=1, meta=False):
+fcopy = copy_file
+
+def copy_dir_if_changed(src, tar, omit=None, verbose=0, meta=False):
   '''
     ## Description
     Copy a dir.  Files are only copied if new or changed.
@@ -816,12 +945,13 @@ def copy_dir_if_changed(src, tar, omit=None, verbose=1, meta=False):
               results.append(msg)
               info['files']['created'] += 1
               continue
-  msg = "Results: " + str(info)
+  msg = "Copy dir results: " + str(info)
   if verbose > 0: 
     if verbose > 1: print('---')
     print(msg)
   return '\n'.join(results)
-    
+
+dcopy = copy_dir_if_changed    
 
 def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True):
   '''
@@ -859,6 +989,8 @@ def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True):
     if rstat: return("Updated file \"{}\" to \"{}\".".format(src, tar))
     else: return(True)
 
+fcopyi = copy_file_if_changed
+
 def get_size(path):
   '''
     ## Description
@@ -876,6 +1008,8 @@ def get_size(path):
     Size as int.
   '''  
   return(os.path.getsize(path))
+
+size = get_size
 
 def last_modified(path):
   '''
@@ -895,3 +1029,4 @@ def last_modified(path):
   '''  
   return(os.path.getmtime(path))
 
+modified = last_modified

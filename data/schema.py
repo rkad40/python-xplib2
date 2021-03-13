@@ -99,16 +99,19 @@ class DataManager():
 
     debug_mode = False
     print_warnings = True
+    coverage_testing = False  # Turned on for coverage tests.  Suppresses some prints.
     
     ##########
 
     def __init__(self, schema, module_file=None, root_rule_name='root', verbosity=1):
+        self.schema = None
+        self.root_rule_name = None
         self.initialize(schema, module_file, root_rule_name, verbosity)
     
     ##########
 
     def __repr__(self):
-        return('DataManager')
+        return('<DataManager>')
     
     ##########
 
@@ -142,25 +145,30 @@ class DataManager():
             schema_rule = self.schema[rule_name]
             if 'root' in schema_rule and bool(schema_rule['root']): 
                 self.root_rule_name = rule_name
+        if self.root_rule_name is None and root_rule_name is not None:
+            self.root_rule_name = root_rule_name
         if self.root_rule_name is None: raise Exception('A root schema rule was not specified.')
         if not self.root_rule_name in self.schema: raise Exception('Schema rule name "{}" not defined in schema object.'.format(self.root_rule_name))
         
         # Validate schema recursively starting at self.root_rule_name.
         self.__validate_schema_recursively(self.root_rule_name)
 
-        # See if there are any unvalidated rules.
+        # See if there are any rules that were not validated.
         if self.print_warnings:
-            unvalidated_rules = []
+            rules_not_validated = []
             for rule_name in self.schema:
                 if not rule_name in self.validated_rules:
-                    unvalidated_rules.append(rule_name)
-            number_rules = len(unvalidated_rules)
-            if number_rules == 1:
-                print('WARNING: Schema rule "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format(unvalidated_rules[0]))
+                    rules_not_validated.append(rule_name)
+            number_rules = len(rules_not_validated)
+            if number_rules == 1: 
+                if not self.coverage_testing: # pragma: no cover
+                    print('WARNING: Schema rule "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format(rules_not_validated[0]))
             elif number_rules > 1:
-                print('WARNING: Schema rules "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format('", "'.join(unvalidated_rules)))
+                if not self.coverage_testing: # pragma: no cover
+                    print('WARNING: Schema rules "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format('", "'.join(rules_not_validated)))
 
-        if not module is None:
+        # Load module if one is defined.
+        if module is not None:
             self.__load_module(module)
     
     ##########
@@ -445,7 +453,7 @@ class DataManager():
                 max_count = schema_rule['max_count']
                 text = '' if num_elements == 1 else 's'
                 if num_elements > max_count: 
-                    raise Exception('{} object "{}" has {} element{}. Maxium of {} allowed.'.format(object_type, node, num_elements, text, max_count))
+                    raise Exception('{} object "{}" has {} element{}. Maximum of {} allowed.'.format(object_type, node, num_elements, text, max_count))
 
             # Data is a list.
             if data_type == list and rule_class == 'list':
@@ -596,7 +604,7 @@ class DataManager():
         if self.render.yaml.add_document_separator: self.lines.append('---' + "\n")
         
         # Output recurse.
-        self.__to_yml_recurse(data, rule_name, rule_name, [], 0)
+        self.__to_yml_recurse(data, None, rule_name, rule_name, [], 0)
 
         # Do list compaction if requested.
         regx = Regx()
@@ -629,7 +637,7 @@ class DataManager():
 
     ##########
 
-    def __to_yml_recurse(self, data, rule_name, node, nodes, depth, collapse=False):
+    def __to_yml_recurse(self, data, parent_data_key, rule_name, node, nodes, depth, collapse=False):
         '''
             Render data in YML format.
             # Arguments
@@ -665,17 +673,36 @@ class DataManager():
             collapse = True 
         if collapse and not parent_collapse: child_collapse = True        
 
+        # Comments, padding and literals are disabled for collapsed child elements.
         if not child_collapse:
+            # ... otherwise:
+            # if 'comment' in schema_rule:
+            #     pass
+            if 'insert' in render:
+                insert = r.s(render['insert'], r'\n\s*$', '', '=')
+                insert_lines = r.split(insert, r'\n')
+                for insert_line in insert_lines:
+                    self.lines.append((tab * (depth-1)) + '{}'.format(insert_line) + "\n")
             if 'padding-before' in render and bool(render['padding-before']):
                 item = self.lines.pop(-1)
                 self.lines.append("\n")
                 self.lines.append(item)
             if 'comment' in schema_rule:
-                comment = r.s(schema_rule['comment'], r'\n\s*$', '', '=')
+                comment_arg = schema_rule['comment']
+                if callable(comment_arg):
+                    comment = comment_arg(parent_data_key, data)
+                else:
+                    comment = comment_arg
+                    if comment.endswith('()'):
+                        comment_temp = comment.replace('()', '')
+                        if comment_temp.isidentifier():
+                            comment = self.module_spec.__dict__[comment_temp](parent_data_key, data)
+                comment = r.s(comment, r'\n\s*$', '', '=')
                 comment_lines = r.split(comment, r'\n')
                 for comment_line in comment_lines:
                     item = self.lines.pop(-1)
-                    self.lines.append((tab * (depth-1)) + '# {}'.format(comment_line) + "\n")
+                    if not comment_line.startswith('#'): comment_line = '# ' + comment_line
+                    self.lines.append((tab * (depth-1)) + comment_line + "\n")
                     self.lines.append(item)
                 if 'padding-after-comment' in render and bool(render['padding-after-comment']):
                     item = self.lines.pop(-1)
@@ -713,10 +740,10 @@ class DataManager():
                                 self.lines.append((tab * list_depth) + list_tab)
                             else:
                                 self.lines[-1] += '['
-                            self.__to_yml_recurse(element, schema_rule['rule'], child_node, child_nodes, list_depth + 1, collapse)
+                            self.__to_yml_recurse(element, None, schema_rule['rule'], child_node, child_nodes, list_depth + 1, collapse)
                         else:
                             self.lines.append((tab * list_depth) + list_tab + "\n")
-                            self.__to_yml_recurse(element, schema_rule['rule'], child_node, child_nodes, list_depth + 1, collapse)
+                            self.__to_yml_recurse(element, None, schema_rule['rule'], child_node, child_nodes, list_depth + 1, collapse)
                     number_of_entries += 1
                     i += 1
                 # If list has no elements, append [] to the parent element.
@@ -734,7 +761,8 @@ class DataManager():
                             self.lines[-1] = "\n".join(new_lines)
                         self.lines[-1] += "\n"
                 elif number_of_entries == 0:
-                    if r.s(self.lines[-1], r'(:\s*)$', r'\1[]]'): self.lines[-1] = r.new
+                    if r.s(self.lines[-1], r'(:\s*)$', r'\1[]\n'): 
+                        self.lines[-1] = r.new.replace('\n[]', '[]')
                 break
 
             if data_type == 'dict' and rule_class == 'dict':
@@ -780,7 +808,7 @@ class DataManager():
                                 else:
                                     if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": "
                                     else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + "\n")
-                                    self.__to_yml_recurse(value, child_rule_name, child_node, child_nodes, depth + 1, collapse)
+                                    self.__to_yml_recurse(value, data_key, child_rule_name, child_node, child_nodes, depth + 1, collapse)
                                 number_of_entries += 1
                 else:
                     for data_key in sorted(data.keys()):
@@ -805,7 +833,7 @@ class DataManager():
                         else:
                             if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": "
                             else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + "\n")
-                            self.__to_yml_recurse(value, child_rule_name, child_node, child_nodes, depth + 1, collapse)
+                            self.__to_yml_recurse(value, data_key, child_rule_name, child_node, child_nodes, depth + 1, collapse)
                         number_of_entries += 1
                 # If dict has no keys, append {} to the parent element.
                 if collapse: 
@@ -846,7 +874,7 @@ class DataManager():
                 value = '|\n' + '\n'.join(lines)
                 value = r.s(value, r'\s*\n\s*$', '', 's=')
                 return(value)
-            if len(value) == 0 or r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'[#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^[\!\*]') or r.m(value, r'[#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
@@ -859,7 +887,7 @@ class DataManager():
             if r.m(value, r'\n'):
                 value = r.s(value, r'\n\s*$', '', '=')
                 return(self.__yml_quote(value, True))
-            if len(value) == 0 or r.m(value, r'[\s#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or r.m(value, r'^[\!\*]') or r.m(value, r'[\s#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:

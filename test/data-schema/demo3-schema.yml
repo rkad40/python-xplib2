@@ -1,0 +1,17 @@
+Root: 
+  class: dict
+  keys:
+  - {name: 'Integer', rule: 'Integer', required: True}
+  - {name: 'Color', rule: 'Color', required: True}
+  root: True
+Integer:
+  class: int
+  min-value: 20
+  max-value: 30
+Color:
+  class: str
+  in: ['blue', 'red', 'green']
+  equals: red
+  validation-func: validate_color
+  matches: '(?i)RE\w$'
+  

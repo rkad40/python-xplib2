@@ -98,6 +98,7 @@ class Time():
                 r"%Y-%m-%dT%H:%M:%S.%f",   # 2020-06-05T10:45:02.501236
                 r"%Y-%m-%dT%H:%M:%S",      # 2020-06-05T10:45:02
                 r"%Y-%m-%dT%H:%M",         # 2020-06-05T10:45
+                r"%Y-%m-%d %I:%M %p",      # 2020-06-05 10:45 AM
             ]
             match_found = False
             for fmt in formats:
@@ -138,9 +139,15 @@ class Time():
     def iso(self): return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
     def iso_long(self): return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
     def iso_short(self): return(self.d.strftime('%Y-%m-%d %H:%M'))
+    def iso_date(self): return(self.d.strftime('%Y-%m-%d'))
     def ansi_ctime_asctime(self): return(self.d.strftime(r'%a %b %e %H:%M:%S %Y'))
     ansi = ansi_ctime_asctime
     def __repr__(self): return(self.d.strftime(self.fmt))
+    def julian_date(self):
+        fmt='%Y-%m-%d'
+        d = datetime.datetime.strptime(self.iso_date(), fmt)
+        d = d.timetuple()
+        return(d.tm_yday)
     __str__ = __repr__
     @staticmethod
     def rand(start, end=None):

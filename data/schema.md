@@ -247,7 +247,7 @@ A `class` of "dict" can defined the following attributes:
 - `render` - Special rules for rendered.  For example, "render: {yaml: {collapse: true}}" collapses the list to a single line e.g. "[1, 2, 3]".  
 - `pre-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done before any other validation on the list object.  See below for additional information on pre-validation functions.
 - `post-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done after other validation on the list object. See below for additional information on post-validation functions.
-- `comment` - A comment that will be printed when rendered.  
+- `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details. 
 
 ### The "keys" Attribute
 
@@ -283,7 +283,7 @@ A `class` of "list" can defined the following attributes:
 - `render` - Special rules for rendered.  For example, "render: {yaml: {collapse: true}}" collapses the list to a single line e.g. "[1, 2, 3]".  
 - `pre-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done before any other validation on the list object. See below for additional information on pre-validation functions.
 - `post-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done after other validation on the list object.  See below for additional information on post-validation functions.
-- `comment` - A comment that will be printed when rendered.  
+- `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details.
 
 ## String Nodes
 
@@ -296,7 +296,7 @@ A `class` of "str" can define the following attributes:
 - `matches` - Value must match the specified regular expression.
 - `in` - Value must be a member of the specified list.
 - `equals` - Value must equal the specified value.
-- `comment` - A comment that will be printed when rendered.
+- `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details.
 
 ## Numeric Nodes
 
@@ -308,7 +308,7 @@ A `class` of "int" or "float" can define the following attributes:
 - `default` - Specifies a default value if not defined.
 - `allow-null` - If true, allow null values (in yaml: ~).
 - `validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  See below for additional information on validation functions.
-- `comment` - A comment that will be printed when rendered.
+- `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details.
 
 ## Bool Node
 
@@ -318,7 +318,52 @@ A `class` of type "bool" can define the following attributes:
 - `default` - Specifies a default value if not defined.
 - `allow-null` - If true, allow null values (in yaml: ~).
 - `validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  See below for additional information on validation functions.
-- `comment` - A comment that will be printed when rendered.
+- `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details.
+
+## Comment Functions
+
+If a `comment` is specified, and the comment is a function or callable, the printed comment will be the return value of the function.  
+
+For example, suppose you have the following schema rule:
+
+```python
+'CategoryDataObject': {
+    'class': 'dict',
+    'keys': [
+        ...
+    ],
+    'comment': category_data,
+},
+```
+
+This rule calls the function `category_data` before rendering the YAML for the data object.  The function is passed the data key, if the source is a dictionary, and the data to be rendered as YAML:
+
+```python
+def category_data(key, data):
+    return f'Category "{key}" spec data values'
+```
+
+The `key` value will only be defined the node is a the value of a dictionary key-value pair.  Otherwise it will be `None`.
+
+Note, the schema must be rendered in Python, not YAML, for this to work.  Otherwise the function name would just appear to be a normal string comment to the parser.  To tell the parser you want to treat a string as a callable function, add "()" to the string.  The equivalent schema rule in YAML would be:
+
+```python
+CategoryDataObject:
+    class: 'dict'
+    keys:
+        ...
+    comment: 'category_data()'
+},
+```
+
+For this to work, the function must exist in a Python interposer module that is loaded when `DataManager()` is first called:
+
+```python
+schema = yaml.load(fs.read_file('schema.yml', True), Loader=yaml.FullLoader)
+dm = DataManager(schema, 'interposer.py')
+```
+
+> NOTE: Actually, I've never tested this last part. FIX!!!
 
 ## Validation Functions
 
