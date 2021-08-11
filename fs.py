@@ -8,9 +8,9 @@ import fs
 ```
 '''
 
-import os, sys, re, filecmp, shutil, time
+import os, sys, re, filecmp, shutil, time, io
 
-def open_file(path, mode='r', encoding="utf8"):
+def open_file(path, mode='r', encoding=None):
   '''
     ## Description
     Open a file.
@@ -23,7 +23,7 @@ def open_file(path, mode='r', encoding="utf8"):
     ## Arguments
     - `path`: file as str
     - `mode='r'`: 'r' for read, 'w' for write
-    - `encoding='utf8'`: encoding
+    - `encoding`: encoding
     
     ## Returns
     file stream (use `close()` to close when done)
@@ -33,7 +33,7 @@ def open_file(path, mode='r', encoding="utf8"):
 
 fopen = open_file
 
-def read_file(path, to_string = False, to_iter = False, encoding="utf8"):
+def read_file(path, to_string = False, to_iter = False, encoding=None):
   '''
     ## Description
     Read file and return a list of lines.
@@ -47,12 +47,13 @@ def read_file(path, to_string = False, to_iter = False, encoding="utf8"):
     - `path`: file as str
     - `to_string`: optional bool; if True return content as a string
     - `to_iter`: optional bool; if True return content is an iterator
-    - `encoding='utf8'`: encoding
+    - `encoding`: encoding
     
     ## Returns
     list of lines each of typ str (or a single string if to_string is True)
   '''
-  f = open(path, 'r', encoding="utf8")
+  # try:
+  f = open(path, 'r', encoding=None)
   if to_iter:
     return(f)
   if to_string:
@@ -63,8 +64,20 @@ def read_file(path, to_string = False, to_iter = False, encoding="utf8"):
     lines = f.readlines()
     f.close()
     return(lines)
-
+  # except UnicodeDecodeError:
+  #   f = open(path, 'r', encoding="ansi")
+  #   if to_iter:
+  #     return(f)
+  #   if to_string:
+  #     text = "".join(f.readlines())
+  #     f.close()
+  #     return(text)
+  #   else:
+  #     lines = f.readlines()
+  #     f.close()
+  #     return(lines)
 fread = read_file
+read = read_file
 
 def write_file(path, content):
   '''
@@ -83,17 +96,18 @@ def write_file(path, content):
     ## Returns
     nothing
   '''  
-  f = open(path, 'w')
-  if type(content) == str:
-    f.write(content)
-    f.close()
-  elif type(content) == list:
-    f.writelines(content)
-    f.close()
-  else:
-    raise Exception('Invalid content of type "{}"; must be "str" or "list".'.format(type(content).__name__))
+  with io.open(path, 'w', encoding=None) as f:
+    if type(content) == str:
+      f.write(content)
+      f.close()
+    elif type(content) == list:
+      f.writelines(content)
+      f.close()
+    else:
+      raise Exception('Invalid content of type "{}"; must be "str" or "list".'.format(type(content).__name__))
 
 fwrite = write_file
+write = write_file
 
 def delete_file(path):
   '''
@@ -113,6 +127,7 @@ def delete_file(path):
   '''  
   os.remove(path)
 
+unlink = delete_file
 fdelete = delete_file
 fdel = delete_file
 
@@ -134,10 +149,11 @@ def delete_dir(path):
   '''  
   shutil.rmtree(path)
 
-ddelete = delete_dir
-ddel = delete_dir
+rmdir = delete_dir
+# ddelete = delete_dir
+# ddel = delete_dir
 
-def write_file_if_changed(path, content, create_dir=True, mode=None):
+def write_file_if_changed(path, content, create_dir=True, simple=False, mode=None):
   '''
     ## Description
     Write a file only if it results in a change.
@@ -151,6 +167,7 @@ def write_file_if_changed(path, content, create_dir=True, mode=None):
     - `path`: file as str
     - `content`: content to write to file
     - `create_dir`: create base dir if it does not already exist (default = True)
+    - `simple`: if True, return simple status string (e.g. "created", "identical", or "updated"); if False, return bool (True if copied, False otherwise)
     - `mode`: assert file mode (default = None)  
     
     ## Returns
@@ -165,18 +182,22 @@ def write_file_if_changed(path, content, create_dir=True, mode=None):
   if not file_exists(path):
     write_file(path, content)
     if mode is not None: os.chmod(path, mode)
-    return('Created new file "{}".'.format(path))
+    if simple: return('created')
+    else: return('Created new file "{}".'.format(path))
   else:
     temp_file = join_names(get_dir_name(path), '.' + get_root_name(path) + '-' + str(time.time()) + '.' + get_ext(path))
     write_file(temp_file, content)
     if files_are_identical(temp_file, path):
       delete_file(temp_file)
-      return('No change to file "{}".'.format(path))
+      if simple: return('identical')
+      else: return('No change to file "{}".'.format(path))
     else:
       shutil.move(temp_file, path)
-      return('Upated file "{}".'.format(path))
+      if simple: return('updated')
+      else: return('Updated file "{}".'.format(path))
 
-fwritei = write_file_if_changed
+fwriteif = write_file_if_changed
+writeif = write_file_if_changed
 
 def rename_file(orig_file, new_file):
   '''
@@ -198,6 +219,7 @@ def rename_file(orig_file, new_file):
   shutil.move(orig_file, new_file)
   return(new_file)
 
+frename = rename_file
 rename = rename_file
 
 def get_file_name(path):
@@ -220,6 +242,7 @@ def get_file_name(path):
   return(rval)
 
 fname = get_file_name
+filename = get_file_name
   
 def get_root_name(path):
   '''
@@ -389,12 +412,13 @@ def get_dir_name(path,count=1):
     Dir name as string.
   '''
   path = get_abs_path(path)
+  # if is_file(path): path = os.path.dirname(path)
   while count > 0:
     path = os.path.dirname(path)
     count -= 1
   return(path)
   
-dname = get_dir_name
+dirname = get_dir_name
 
 def fix_path_name(*path):
   '''
@@ -515,7 +539,7 @@ def get_app_data_path(abs_path, base_path):
   '''
   return(get_abs_path(os.getenv('APPDATA')))
 
-adir = get_app_data_path
+appdata = get_app_data_path
 
 def get_cwd():
   '''
@@ -568,7 +592,7 @@ def get_script_file():
   if not is_abs_path(script_file): script_file = get_abs_path(script_file)
   return(script_file)
 
-sfile = get_script_file
+script = get_script_file
 
 def get_script_dir():
   '''
@@ -585,7 +609,7 @@ def get_script_dir():
   '''
   return(get_dir_name(get_script_file()))
 
-sdir = get_script_dir
+scriptdir = get_script_dir
 
 def join_names(*args):
   '''
@@ -667,7 +691,7 @@ def is_dir(path):
 
 isdir = is_dir
 
-def get_abs_path(path, relpath=None):
+def get_abs_path(path, basepath=None):
   '''
     ## Description
     Get the absolute path.
@@ -679,20 +703,20 @@ def get_abs_path(path, relpath=None):
 
     ## Arguments
     - `path`: file or folder path as a string
+    - `basepath`: if specified, use this as the base path
     
     ## Returns
     Absolute path as a str.
   '''
   if os.path.isabs(path): 
     return(os.path.normpath(path))
-  if relpath is None:
+  if basepath is None:
     path = os.path.abspath(path)
     path = os.path.normpath(path)
     return(path)
   else:
-    if not os.path.isabs(relpath): relpath = os.path.abspath(relpath)
-    # if not os.path.isdir(path): relpath = os.path.dirname(relpath)
-    path = os.path.join(relpath, path)
+    if not os.path.isabs(basepath): basepath = os.path.abspath(basepath)
+    path = os.path.join(basepath, path)
     path = os.path.normpath(path)
     return(path)
 
@@ -732,7 +756,7 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
         yield(os.path.join(root,file))
       if not rec: break
 
-getfiles = get_files
+files = get_files
 
 def get_dirs(paths,regx=r'.*'):
   '''
@@ -765,6 +789,7 @@ def get_dirs(paths,regx=r'.*'):
       break
 
 getdirs = get_dirs
+dirs = get_dirs
 
 def create_dir(path, mode=0x775):
   '''
@@ -791,7 +816,7 @@ def create_dir(path, mode=0x775):
 
 mkdir = create_dir
 
-def files_are_identical(file1, file2):
+def files_are_identical(file1, file2, rstrip=False):
   '''
     ## Description
     Compare two files returning True if identical, false otherwise.
@@ -804,13 +829,23 @@ def files_are_identical(file1, file2):
     ## Arguments
     - `file1`: first file
     - `file2`: second file
+    - `rstrip`: strip spaces at the end of each line
     
     ## Returns
-    True if identical, Falser otherwise.
+    True if identical, False otherwise.
   '''  
+  if rstrip:
+    if filecmp.cmp(file1, file2, shallow=False): return True
+    lines1 = read_file(file1, to_string=True).rstrip().splitlines()
+    lines2 = read_file(file2, to_string=True).rstrip().splitlines()
+    if len(lines1) != len(lines2): return False
+    for i in range(0, len(lines1)):
+      if lines1[i].rstrip() != lines2[i].rstrip(): return False
+    return True
   return (filecmp.cmp(file1, file2, shallow=False))
 
 fsame = files_are_identical
+same = files_are_identical
 
 def copy_file(src, tar, create_dirs=False, meta=False):
   '''
@@ -953,7 +988,7 @@ def copy_dir_if_changed(src, tar, omit=None, verbose=0, meta=False):
 
 dcopy = copy_dir_if_changed    
 
-def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True):
+def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True, simple=False):
   '''
     ## Description
     Copy a file only if it has been changed.
@@ -969,6 +1004,7 @@ def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True):
     - `create_dir`: if True, create the target directory if it does not already exist
     - `meta`: copy meta data and permissions as well
     - `rstat`: if True, return status string; if False, return bool (True if copied, False otherwise)
+    - `simple`: if True, return simple status string (e.g. "created", "identical", or "updated"); if False, return bool (True if copied, False otherwise)
     
     ## Returns
     A printable string indicating status.
@@ -978,18 +1014,24 @@ def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True):
   if not file_exists(tar):
     if meta: shutil.copy(src, tar)
     else: shutil.copy2(src, tar)
-    if rstat: return("Copied file \"{}\" to \"{}\".".format(src, tar))
+    if rstat: 
+      if simple: return("created")
+      else: return("Copied file \"{}\" to \"{}\".".format(src, tar))
     else: return(True)
   elif files_are_identical(src, tar):
-    if rstat: return("Files \"{}\" and are \"{}\" identical.".format(src, tar))
+    if rstat:
+      if simple: return("identical")
+      else: return("Files \"{}\" and are \"{}\" identical.".format(src, tar))
     else: return(False)
   else:
     if meta: shutil.copy(src, tar)
     else: shutil.copy2(src, tar)
-    if rstat: return("Updated file \"{}\" to \"{}\".".format(src, tar))
+    if rstat:
+      if simple: return("updated") 
+      else: return("Updated file \"{}\" to \"{}\".".format(src, tar))
     else: return(True)
 
-fcopyi = copy_file_if_changed
+fcopyif = copy_file_if_changed
 
 def get_size(path):
   '''

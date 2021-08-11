@@ -11,7 +11,7 @@ can be validated and rendered.  This means you could not validate or render data
 classes.  
 """
 
-import fs, ru, re
+import fs, ru, re, json
 from regx import Regx 
 import importlib.util as importer
 import textwrap
@@ -93,8 +93,6 @@ class DataManager():
     and uses the schema to validate it and render an output file 
     [`example-test.py`](../test/data-schema/example-test.py)
 
-
-
     """
 
     debug_mode = False
@@ -130,6 +128,8 @@ class DataManager():
     def initialize(self, schema, module=None, root_rule_name=None, verbosity=1):
         
         # Initialize instance variables.
+        # schema = json.loads(json.dumps(schema)) # Bug fix.  If schema is used a second time, an error can occur:
+        #                                         # Exception: Schema rule name "__undefined__" not defined in schema object.
         self.data_object = None
         self.schema = schema         # schema object
         self.validated_rules = {}    # hash of validated rule names
@@ -614,7 +614,7 @@ class DataManager():
                 if regx.match(line, r'^(\s*)(-\s*)\n$', ''):
                     first_part = regx.group[0] + regx.group[1]
                     child_indent = '^' + " " * len(first_part)
-                    if len(self.lines) > i and regx.s(self.lines[i+1], child_indent, first_part):
+                    if len(self.lines) > i+1 and regx.s(self.lines[i+1], child_indent, first_part):
                         self.lines[i+1] = regx.new
                         remove_line_index.append(i)
                 elif regx.match(line, r'^(\s*)(-\s*)(\#.*?)\n$', ''):
@@ -628,6 +628,15 @@ class DataManager():
                 remove_line_index.reverse()
                 for i in remove_line_index: self.lines.pop(i)
 
+        # This is an attempt to fix a bug in the code.  If (1) there is a dict key-value pair and 
+        # (2) the value is an empty dict i.e. {}, then the {} is printed on the line after the ":".
+        # This "fix" is a bit of a hack.  Please revisit in the future.  FIX!!! 
+        if True:
+            remove_line_index = []
+            for i in range(0, len(self.lines)):
+                self.lines[i] = regx.s(self.lines[i], r'(:\s+)\n(\{\})\s*$', r'\1\2\n', '=')
+                self.lines[i] = regx.s(self.lines[i], r'(:\s+)\n(\[\])\s*$', r'\1\2\n', '=')
+                
         # Return the data.
         return("".join(self.lines))
     

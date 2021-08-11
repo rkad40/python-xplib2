@@ -248,7 +248,33 @@ class TestRex(unittest.TestCase):
     def test_015_escape(self):
         rex = Rex()
         val = rex.escape(r'^\1')
-        self.assertEqual(val, r'\^\\1')       
+        self.assertEqual(val, r'\^\\1')   
+
+    def test_016_while_loop_sub(self):
+        # This test is coverage for a bug in version 1.000 of rex.py.  The sub() method was never 
+        # returning True for single instance with a replace function.  
+        rex = Rex()
+        original = "=A4+2*C10"
+        expected = "=xxx+2*xxx"
+        def replace_first_pass(m): return 'xxx'
+        # This test, without a replace function, was passing in 1.000.
+        old = original
+        new = original
+        while rex.s(new, r'(\!{0,1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)', 'xxx', ''):
+            new = rex.new
+        self.assertEqual(new, expected)
+        # This test, with a replace function, was failing in 1.000.
+        old = original
+        new = original
+        while rex.s(new, r'(\!{0,1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)', replace_first_pass, ''):
+            new = rex.new
+        self.assertEqual(new, expected)
+        # In this version, sub() with replace function should fail first match attempt.
+        old = original
+        new = original
+        while rex.s(new, r'(\!{1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)', replace_first_pass, ''):
+            new = rex.new
+        self.assertNotEqual(new, expected)
 
 if __name__ == '__main__': # pragma: no cover
     unittest.main()

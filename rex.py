@@ -15,6 +15,8 @@ val = rex.s(val, r'^\s*(\d{3})(\d{3})(\d{4})\s*$', r'\1-\2-\3', '=gm')
 
 import re
 
+VERSION = '1.001'
+
 class Rex():
     def __init__(self): 
         self.clear()
@@ -166,12 +168,13 @@ class Rex():
         '''
 
         # Initialize instance attributes.
-        self.opt = ''         # List of flag options e.g. 'gs' -> ['g', 's'].
-        self.flags = 0        # Integer flag mask used by native re search function.
-        self.old = var        # Copy of initial string.  
-        self.new = None       # Modified string.  Not used in match() method.    
-        self.result = False   # Set to True if match found, False otherwise.  
-        self.i = 0            # Iterator index value.
+        self.opt = ''                 # List of flag options e.g. 'gs' -> ['g', 's'].
+        self.flags = 0                # Integer flag mask used by native re search function.
+        self.old = var                # Copy of initial string.  
+        self.new = None               # Modified string.  Not used in match() method.    
+        self.result = False           # Set to True if match found, False otherwise.  
+        self.i = 0                    # Iterator index value.
+        self.matrix = []              # Match group matrix.
         
         # Parse options and set self.flags.
         self.opt = list(opt.lower())
@@ -285,6 +288,7 @@ class Rex():
         self.new = None               # Modified string.  Not used in match() method.    
         self.result = False           # Set to True if match found, False otherwise.  
         self.i = 0                    # Iterator index value.
+        self.matrix = []              # Match group matrix.
         
         # Parse options and set self.flags.
         for c in self.opt:
@@ -297,12 +301,14 @@ class Rex():
         
         # The replace value can be a function, in which case it will be "wrapped" with a decorator
         # function called replace_wrapper().  The function of replace_wrapper() is to get the 
-        # dollar group variables tha than be passed to the specified callback.  
+        # dollar group variables to be passed to the specified callback.  
         if replace is not str and callable(replace):
+            self.result = False
             def replace_wrapper(m):
                 dollar = []
                 for i in range(0, m.re.groups + 1):
                     dollar.append(m.group(i))
+                    self.result = True
                 self.matrix = []
                 self.matrix.append(dollar)
                 return(replace(dollar))
@@ -339,7 +345,7 @@ class Rex():
 
     sub = s        
 
-    def split(self, var, pattern, opt=''):
+    def split(self, var, pattern, opt='', cnt=0):
         r'''
             ## Description
             Regular expression split.
@@ -373,7 +379,7 @@ class Rex():
         if 'i' in opt: self.flags |= re.IGNORECASE
         if 'm' in opt: self.flags |= re.MULTILINE
         if 's' in opt: self.flags |= re.DOTALL
-        lst = re.split(pattern, var, flags=self.flags)
+        lst = re.split(pattern, var, flags=self.flags, maxsplit=cnt)
         return(lst)    
 
     def trim(self, var, opt='=s'):

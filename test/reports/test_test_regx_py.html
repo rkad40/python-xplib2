@@ -3,7 +3,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=emulateIE7" />
-    <title>Coverage for test\test_regx.py: 100%</title>
+    <title>Coverage for test\test_regx.py: 99%</title>
     <link rel="stylesheet" href="style.css" type="text/css">
     <script type="text/javascript" src="jquery.min.js"></script>
     <script type="text/javascript" src="jquery.hotkeys.js"></script>
@@ -17,15 +17,15 @@
 <div id="header">
     <div class="content">
         <h1>Coverage for <b>test\test_regx.py</b> :
-            <span class="pc_cov">100%</span>
+            <span class="pc_cov">99%</span>
         </h1>
         <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
         <h2 class="stats">
-            202 statements &nbsp;
-            <button type="button" class="run shortkey_r button_toggle_run" title="Toggle lines run">202 run</button>
-            <button type="button" class="mis show_mis shortkey_m button_toggle_mis" title="Toggle lines missing">0 missing</button>
+            222 statements &nbsp;
+            <button type="button" class="run shortkey_r button_toggle_run" title="Toggle lines run">221 run</button>
+            <button type="button" class="mis show_mis shortkey_m button_toggle_mis" title="Toggle lines missing">1 missing</button>
             <button type="button" class="exc show_exc shortkey_x button_toggle_exc" title="Toggle lines excluded">2 excluded</button>
-            <button type="button" class="par run show_par shortkey_p button_toggle_par" title="Toggle lines partially run">0 partial</button>
+            <button type="button" class="par run show_par shortkey_p button_toggle_par" title="Toggle lines partially run">1 partial</button>
         </h2>
     </div>
 </div>
@@ -304,14 +304,40 @@
     <p id="t250" class="run"><span class="n"><a href="#t250">250</a></span><span class="t">        <span class="nam">val</span> <span class="op">=</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">escape</span><span class="op">(</span><span class="str">r'^\1'</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p id="t251" class="run"><span class="n"><a href="#t251">251</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">assertEqual</span><span class="op">(</span><span class="nam">val</span><span class="op">,</span> <span class="str">r'\^\\1'</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p id="t252" class="pln"><span class="n"><a href="#t252">252</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p id="t253" class="exc show_exc"><span class="n"><a href="#t253">253</a></span><span class="t"><span class="key">if</span> <span class="nam">__name__</span> <span class="op">==</span> <span class="str">'__main__'</span><span class="op">:</span> <span class="com"># pragma: no cover</span>&nbsp;</span><span class="r"></span></p>
-    <p id="t254" class="exc show_exc"><span class="n"><a href="#t254">254</a></span><span class="t">    <span class="nam">unittest</span><span class="op">.</span><span class="nam">main</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t253" class="run"><span class="n"><a href="#t253">253</a></span><span class="t">    <span class="key">def</span> <span class="nam">test_016_while_loop_sub</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t254" class="pln"><span class="n"><a href="#t254">254</a></span><span class="t">        <span class="com"># This test is coverage for a bug in version 1.000 of rex.py.  The sub() method was never </span>&nbsp;</span><span class="r"></span></p>
+    <p id="t255" class="pln"><span class="n"><a href="#t255">255</a></span><span class="t">        <span class="com"># returning True for single instance with a replace function.  </span>&nbsp;</span><span class="r"></span></p>
+    <p id="t256" class="run"><span class="n"><a href="#t256">256</a></span><span class="t">        <span class="nam">rex</span> <span class="op">=</span> <span class="nam">Rex</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t257" class="run"><span class="n"><a href="#t257">257</a></span><span class="t">        <span class="nam">original</span> <span class="op">=</span> <span class="str">"=A4+2*C10"</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t258" class="run"><span class="n"><a href="#t258">258</a></span><span class="t">        <span class="nam">expected</span> <span class="op">=</span> <span class="str">"=xxx+2*xxx"</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t259" class="run"><span class="n"><a href="#t259">259</a></span><span class="t">        <span class="key">def</span> <span class="nam">replace_first_pass</span><span class="op">(</span><span class="nam">m</span><span class="op">)</span><span class="op">:</span> <span class="key">return</span> <span class="str">'xxx'</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t260" class="pln"><span class="n"><a href="#t260">260</a></span><span class="t">        <span class="com"># This test, without a replace function, was passing in 1.000.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t261" class="run"><span class="n"><a href="#t261">261</a></span><span class="t">        <span class="nam">old</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t262" class="run"><span class="n"><a href="#t262">262</a></span><span class="t">        <span class="nam">new</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t263" class="run"><span class="n"><a href="#t263">263</a></span><span class="t">        <span class="key">while</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">s</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="str">r'(\!{0,1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)'</span><span class="op">,</span> <span class="str">'xxx'</span><span class="op">,</span> <span class="str">''</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t264" class="run"><span class="n"><a href="#t264">264</a></span><span class="t">            <span class="nam">new</span> <span class="op">=</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">new</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t265" class="run"><span class="n"><a href="#t265">265</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">assertEqual</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="nam">expected</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t266" class="pln"><span class="n"><a href="#t266">266</a></span><span class="t">        <span class="com"># This test, with a replace function, was failing in 1.000.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t267" class="run"><span class="n"><a href="#t267">267</a></span><span class="t">        <span class="nam">old</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t268" class="run"><span class="n"><a href="#t268">268</a></span><span class="t">        <span class="nam">new</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t269" class="run"><span class="n"><a href="#t269">269</a></span><span class="t">        <span class="key">while</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">s</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="str">r'(\!{0,1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)'</span><span class="op">,</span> <span class="nam">replace_first_pass</span><span class="op">,</span> <span class="str">''</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t270" class="run"><span class="n"><a href="#t270">270</a></span><span class="t">            <span class="nam">new</span> <span class="op">=</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">new</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t271" class="run"><span class="n"><a href="#t271">271</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">assertEqual</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="nam">expected</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t272" class="pln"><span class="n"><a href="#t272">272</a></span><span class="t">        <span class="com"># In this version, sub() with replace function should fail first match attempt.</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t273" class="run"><span class="n"><a href="#t273">273</a></span><span class="t">        <span class="nam">old</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t274" class="run"><span class="n"><a href="#t274">274</a></span><span class="t">        <span class="nam">new</span> <span class="op">=</span> <span class="nam">original</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t275" class="par run show_par"><span class="n"><a href="#t275">275</a></span><span class="t">        <span class="key">while</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">s</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="str">r'(\!{1})\${0,1}([a-zA-Z]{1,3})\${0,1}(\d+)'</span><span class="op">,</span> <span class="nam">replace_first_pass</span><span class="op">,</span> <span class="str">''</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"><span class="annotate short">275&#x202F;&#x219B;&#x202F;276</span><span class="annotate long">line 275 didn't jump to line 276, because the condition on line 275 was never true</span></span></p>
+    <p id="t276" class="mis show_mis"><span class="n"><a href="#t276">276</a></span><span class="t">            <span class="nam">new</span> <span class="op">=</span> <span class="nam">rex</span><span class="op">.</span><span class="nam">new</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t277" class="run"><span class="n"><a href="#t277">277</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">assertNotEqual</span><span class="op">(</span><span class="nam">new</span><span class="op">,</span> <span class="nam">expected</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t278" class="pln"><span class="n"><a href="#t278">278</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p id="t279" class="exc show_exc"><span class="n"><a href="#t279">279</a></span><span class="t"><span class="key">if</span> <span class="nam">__name__</span> <span class="op">==</span> <span class="str">'__main__'</span><span class="op">:</span> <span class="com"># pragma: no cover</span>&nbsp;</span><span class="r"></span></p>
+    <p id="t280" class="exc show_exc"><span class="n"><a href="#t280">280</a></span><span class="t">    <span class="nam">unittest</span><span class="op">.</span><span class="nam">main</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
 </div>
 <div id="footer">
     <div class="content">
         <p>
             <a class="nav" href="index.html">&#xab; index</a> &nbsp; &nbsp; <a class="nav" href="https://coverage.readthedocs.io">coverage.py v5.2.1</a>,
-            created at 2020-09-28 12:03 -0500
+            created at 2021-03-04 23:56 -0600
         </p>
     </div>
 </div>

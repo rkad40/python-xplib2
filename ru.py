@@ -400,7 +400,7 @@ def pluralize(word, cnt=2, plural=None):
     if rex.m(val, 'on$'): return word[:-2] + 'a'
     return word + 's'
 
-def create_banner(title, subtitle=None, size=100, border='', font="standard", center=False):
+def create_banner(title, subtitle=None, size=98, border='', font="standard", center=False):
     r"""
     Create a text banner (using Figlet).  
 
@@ -443,15 +443,37 @@ def create_banner(title, subtitle=None, size=100, border='', font="standard", ce
                 banner += border + line.center(size-2*len(border)) + border + '\n'
         else:
             if len(border) > 0:
-                
                 for line in subtitle:
                     banner += border + ' ' + line.center(size-2*len(border)) + border + '\n'
             else:
                 for line in subtitle:
-                    banner += line.ljust(size)
+                    banner += line.ljust(size) + '\n'
     if len(border) > 0:
         banner = f'{border*size}\n{banner}{border*size}\n'
     return banner
+
+def sort_alpha_num(items):
+    data = {}
+    keys = []
+    sorted_items = []
+    from rex import Rex
+    rex = Rex()
+    def update_nums(m):
+        num = int(m[1])
+        num = num + 1000000000000000000
+        return str(num)
+    for item in items:
+        key = rex.s(item, '(\d+)', update_nums, 'g=')
+        data[key] = item
+        keys.append(key)
+    keys.sort()
+    for key in keys:
+        sorted_items.append(data[key])
+    return sorted_items
+
+def clone(data):
+    import json
+    return json.loads(json.dumps(data))
 
 def die(msg):
     '''
