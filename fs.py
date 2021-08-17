@@ -418,6 +418,7 @@ def get_dir_name(path,count=1):
     count -= 1
   return(path)
   
+dname = get_dir_name
 dirname = get_dir_name
 
 def fix_path_name(*path):
