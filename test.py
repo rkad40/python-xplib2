@@ -14,7 +14,7 @@ r"""
 cov = None
 run_coverage = True
 if run_coverage:
-    cov = coverage.coverage(branch=True, include=r"C:\Python\xplib\*")
+    cov = coverage.coverage(branch=True, include=r".\*")
     cov.start()
 
 import unittest

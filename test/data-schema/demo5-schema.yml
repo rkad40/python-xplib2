@@ -1,0 +1,25 @@
+Root: 
+  class: dict
+  keys:
+  - {name: 'Dict\d+', regx: true, rule: 'DictAnon', required: false}
+  - {name: 'List1', regx: false, rule: 'List1', required: false}
+  - {name: 'List2', regx: false, rule: 'List2', required: false}
+  - {name: 'List3', regx: false, rule: 'List3', required: false}
+  root: True
+DictAnon:
+  class: dict
+List1:
+  class: list
+  rule: String
+List2:
+  class: list
+  rule: String
+  render: {yaml: {collapse: true}}
+List3:
+  class: list
+  rule: Integer
+  render: {yaml: {collapse: true}}
+String:
+  class: str
+Integer:
+  class: int

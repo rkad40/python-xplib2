@@ -247,6 +247,7 @@ A `class` of "dict" can defined the following attributes:
 - `render` - Special rules for rendered.  For example, "render: {yaml: {collapse: true}}" collapses the list to a single line e.g. "[1, 2, 3]".  
 - `pre-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done before any other validation on the list object.  See below for additional information on pre-validation functions.
 - `post-validation-func` - Additional validation in the form of a function that (1) returns the data value if valid, or (2) throws an exception otherwise.  This validation is done after other validation on the list object. See below for additional information on post-validation functions.
+- `key-sort-func`: Key sorting function (e.g. use `str.lower` to do case insensative sorting).  NOTE: `key-sort-func` is only applicable if no `keys` list is defined.  If a `keys` list is defined, it takes precedence.  There is one expection.  If a `keys` list is defined, and a key entry has `regx` set to True, matching keys will adhere to the `key-sort-func` specification.   
 - `comment` - A comment that will be printed when rendered.  The comment value can be a function, in which case the printed comment will be the content returned by the function.  See **Comment Functions** below for more details. 
 
 ### The "keys" Attribute
@@ -541,4 +542,27 @@ The collapsed format should have been rendered as:
 ```yaml
 Scrub: [Trim(), 'Match(r"^\d+$", msg="a positive integer (e.g. \"0\", \"2\", etc.)")', CastInt(), 'InRange(0, 31)']
 ```
+
+## Global Rendering Options
+
+`Data-Schema` also allows you to set global rendering options:
+
+```python
+# Examples:
+dm.render.yaml.number_indent_spaces = 4
+dm.render.yaml.enable_double_quote = True
+dm.render.yaml.add_document_separator = False
+dm.render.yaml.collapsed_line_length = 80
+dm.render.yaml.enable_list_inset = False      # FIX!!!
+dm.render.yaml.enable_list_compaction = True  # FIX!!!
+```
+
+Valid rendering options:
+
+- `dm.render.yaml.number_indent_spaces`: Sets the number of indent spaces.  Default is 2.
+- `dm.render.yaml.enable_double_quote`: Single quotes are normally used for quoting tokens.  But if you set this option to `True`, double quotes are used instead.
+- `dm.render.yaml.add_document_separator`: Normally, documents begin with "---".  You can disable this by setting this option to False.
+- `dm.render.yaml.collapsed_line_length`: Both lists and dictionaries can be "collapsed" in which case the list or dictionary content all appears on one line.  But you can force collapsed lists and dictionaries to word wrap at a specified value using this parameter.  Defaults to 0 (i.e. no wrapping).
+
+
 

@@ -80,11 +80,58 @@ class TestRex(unittest.TestCase):
         mod_schema['Color']['matches'] = '/black/i'
         with self.assertRaises(Exception): dm.validate(data)
     
-    def test_004_exceptions(self):
-        pass
+    def test_004_miscellaneous(self):
+        self.data_schema_test('demo4')
+        schema = yaml.load(self.schema_yml_file_content, Loader=yaml.FullLoader)
+        mod_schema = yaml.load(yaml.dump(schema, Dumper=yaml.SafeDumper), Loader=yaml.FullLoader)
+        dm = DataManager(mod_schema, self.schema_py_file)
+        dm.validate(self.data)
+        del self.data['Dict1']['aaa']
+        with self.assertRaises(Exception) as err: dm.validate(self.data)
+        self.assertIn('Minimum of 4 required', str(err.exception))
+        for i in range(100, 110):
+            key = f'token{i}'
+            self.data['Dict1'][key] = i
+        with self.assertRaises(Exception) as err: dm.validate(self.data)
+        self.assertIn('Maximum of 6 allowed', str(err.exception))
 
-    def test_005_misc(self):
-        pass
+    def test_005_render_yaml_options(self):
+        self.data_schema_test('demo5')
+        schema = yaml.load(self.schema_yml_file_content, Loader=yaml.FullLoader)
+        mod_schema = yaml.load(yaml.dump(schema, Dumper=yaml.SafeDumper), Loader=yaml.FullLoader)
+        dm = DataManager(mod_schema, self.schema_py_file)
+        dm.validate(self.data)
+        
+        dm.render.yaml.number_indent_spaces = 4
+        dm.render.yaml.enable_double_quote = True
+        dm.render.yaml.add_document_separator = False
+        dm.render.yaml.collapsed_line_length = 80
+        
+        # These do nothing???
+        # dm.render.yaml.enable_list_compaction = True
+        # dm.render.yaml.enable_list_inset = False
+
+        self.dm = dm
+        self.write_target_file('demo6')
+
+    def write_target_file(self, name):
+        self.tar_data_yml_file = fs.join_names(dir, 'data-schema', 'target', f'{name}-data.yml')
+        self.exp_data_yml_file = fs.join_names(dir, 'data-schema', 'expect', f'{name}-data.yml')
+        # Write output YML file.
+        tar_data_yml_file_content1 = self.dm.to_yml(self.data)
+        fs.write_file_if_changed(self.tar_data_yml_file, tar_data_yml_file_content1)
+        # Validate the validated YML content.
+        data = yaml.load(tar_data_yml_file_content1, Loader=yaml.FullLoader)
+        is_valid = True
+        self.dm.validate(data)
+        # try: self.dm.validate(data)
+        # except: is_valid = False
+        self.assertTrue(is_valid)
+        tar_data_yml_file_content2 = self.dm.to_yml(data)
+        self.assertTrue(tar_data_yml_file_content1 == tar_data_yml_file_content2)
+        # Compare against saved expect file.
+        self.exp_data_yml_file_content = fs.read_file(self.exp_data_yml_file, True)
+        self.assertTrue(tar_data_yml_file_content1 == self.exp_data_yml_file_content)
 
     def data_schema_test(self, name):
         # Defined file names.  
@@ -102,8 +149,9 @@ class TestRex(unittest.TestCase):
         # Validate the data.
         self.dm = DataManager(self.schema, self.schema_py_file)
         is_valid = True
-        try: self.dm.validate(self.data)
-        except: is_valid = False
+        self.dm.validate(self.data)
+        # try: self.dm.validate(self.data)
+        # except: is_valid = False
         self.assertTrue(is_valid)
         # Write output YML file.
         tar_data_yml_file_content1 = self.dm.to_yml(self.data)
@@ -111,8 +159,9 @@ class TestRex(unittest.TestCase):
         # Validate the validated YML content.
         data = yaml.load(tar_data_yml_file_content1, Loader=yaml.FullLoader)
         is_valid = True
-        try: self.dm.validate(data)
-        except: is_valid = False
+        self.dm.validate(data)
+        # try: self.dm.validate(data)
+        # except: is_valid = False
         self.assertTrue(is_valid)
         tar_data_yml_file_content2 = self.dm.to_yml(data)
         self.assertTrue(tar_data_yml_file_content1 == tar_data_yml_file_content2)

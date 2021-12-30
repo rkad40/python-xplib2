@@ -1,16 +1,19 @@
 '''
-## Description
+# rex
+
 An intuitive regular expression class wrapper for Python's often confusing `re`
 regular expression module.
 
 ## Usage
-```
+
+```python
 from rex import Rex
 rex = Rex()
 ...
 # Reformat lines of phone numbers.  
 val = rex.s(val, r'^\s*(\d{3})(\d{3})(\d{4})\s*$', r'\1-\2-\3', '=gm')
 ```
+
 '''
 
 import re
@@ -27,7 +30,8 @@ class Rex():
             Reset `rex` object.
             
             ## Usage
-            ```
+            
+            ```python
             rex.clear()
             ```
             
@@ -84,6 +88,7 @@ class Rex():
             can access or edit `rex.matrix` directly if the need arises.
 
             ## Usage
+            
             ```python
             rex = Rex()
             statement = 'My favorite color is blue.  My favorite number is 7.'
@@ -144,13 +149,15 @@ class Rex():
             Regular expression match (`m` short form, `match` long form).
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             str = "The rain in Spain ain't stopping nobody."
             if rex.match(str, r'(?:^|\s*)(\w*?ai.*?)(?:\s+|$)', 'g'):
                 print(r.group)
             >>> ['rain', 'Spain', "ain't"]
             ```
+            
             ## Arguments
             - `var`: Source string variable.
             - `pattern`: Regular expression pattern.
@@ -223,7 +230,8 @@ class Rex():
             Regular expression substitution (`s` short form, `sub` long form).
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             str = """
             This is a test.
@@ -351,7 +359,8 @@ class Rex():
             Regular expression split.
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             str = "The rain in Spain ain't stopping nobody."
             words = rex.split(str, r'\s+'):
@@ -388,7 +397,8 @@ class Rex():
             Trim leading and trailing spaces.
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             val = rex.trim("  The rain in Spain ain't stopping nobody.  "):
             print(val)
@@ -415,7 +425,8 @@ class Rex():
             Remove leading and trailing quotes from string.
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             val = rex.unquote('"Stop what you are doing!"'):
             print(val)
@@ -443,7 +454,8 @@ class Rex():
             Escape meta characters in a string.
             
             ## Usage
-            ```
+            
+            ```python
             rex = Rex()
             val = rex.escape(r'^\1'):
             ```

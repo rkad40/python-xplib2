@@ -1,10 +1,25 @@
+r"""
+Python "random utility" library.
+
+## Usage
+
+```python
+import ru
+```
+
+"""
+
 import random
 
 def stype(obj):
     '''
         Get the type of an object as a string.
-        # Arguments
+
+    ## Arguments
         - obj: Object to inspect.
+
+    ## Returns
+    Object type as string.
     '''
     return(type(obj).__name__)
 string_type = stype
@@ -12,9 +27,13 @@ string_type = stype
 def rint(min, max):
     '''
         Return a random int between min and max integers (inclusive).
-        # Arguments
+
+    ## Arguments
         - min: Min int
         - max: Max int inclusive (i.e. max is a possible return value)
+
+    ## Returns
+    Random integer.
     '''
     return(random.randint(min, max))
 rand_int = rint
@@ -22,8 +41,12 @@ rand_int = rint
 def ritem(lst):
     '''
         Return a random value from the list.
-        # Arguments
+
+    ## Arguments
         - lst: List of items
+
+    ## Returns
+    Random item from list.
     '''
     return(lst[rint(0, len(lst)-1)])
 rand_item = ritem
@@ -31,10 +54,12 @@ rand_item = ritem
 def crange(c1, c2):
     '''
         Return a list of characters in the range c1 to c2.
-        # Arguments
+
+    ## Arguments
         - c1: Start character
         - c2: End character
-        # Returns
+
+    ## Returns
         List of characters.
     '''
     lst = []
@@ -46,10 +71,12 @@ char_range = crange
 def trim(s):
     '''
         Remove leading and trailing white spaces from string s.
-        # Arguments
+
+    ## Arguments
         - s: String
-        # Returns
-        The resultant string.
+
+    ## Returns
+    Resultant string.
     '''
     from rex import Rex
     rex = Rex()
@@ -58,12 +85,12 @@ def trim(s):
 
 def squote(s):
     r"""
-    ## Description
     Single quote a string for the purpose of embedding in a quote.
 
     ## Usage
     Suppose you have a string that reads: `The captain said, "All hope's lost!".` assigned to a
     variable `s`:
+    
     ```python
     print(ru.squote(s))
     >>> 'The captain said, "All hope\'s lost!"'
@@ -83,12 +110,12 @@ def squote(s):
 
 def dquote(s):
     r"""
-    ## Description
     Double quote a string for the purpose of embedding in a quote.
 
     ## Usage
     Suppose you have a string that reads: `The captain said, "All hope's lost!".` assigned to a
     variable `s`:
+    
     ```python
     print(ru.dquote(s))
     >>> "The captain said, \"All hope's lost!\""
@@ -108,7 +135,6 @@ def dquote(s):
 
 def quote(s):
     r"""
-    ## Description
     Quote a string for the purpose of embedding in a quote using either single or double quotes, 
     whichever form is not already present in string.  If both are present, defaults to single 
     quotes.
@@ -116,6 +142,7 @@ def quote(s):
     ## Usage
     Suppose you have a string that reads: `The captain said, "All hope's lost!".` assigned to a
     variable `s`:
+    
     ```python
     print(ru.quote(s))
     >>> 'The captain said, "All hope\'s lost!"'
@@ -135,10 +162,10 @@ def quote(s):
 
 def join_with_commas(items):
     r"""
-    ## Description
     Join list items with a comma.  Last item is joined with "and".
 
     ## Usage
+    
     ```python
     items = ["apples", "oranges", "bananas"]
     print(ru.join_with_commas(items))
@@ -159,10 +186,10 @@ def join_with_commas(items):
 
 def join_items(items, join_with=", ", last_join=None, quote_items=False):
     r"""
-    ## Description
     Join list items.
 
     ## Usage
+    
     ```python
     items = ["apples", "oranges", "bananas"]
     print(ru.join_all(items))
@@ -175,10 +202,7 @@ def join_items(items, join_with=", ", last_join=None, quote_items=False):
     - `items` : list of items to be joined
     - `join_with` : join items with (default is ", ")
     - `last_join` : use instead of `join_with` for last join e.g. " and " or " or " (default is None, meaning use `join_with`)
-    - `quote` : quote items? 
-        1. `False` : no quoting
-        2. `True` : quote using double quotes e.g. item -> "item"
-        3. string value : quote using the string value e.g. item (with quote="'") -> 'item'
+    - `quote` : quote items? Valid values are `False`: no quoting, `True`: quote using double quotes e.g. item -> "item", string value: quote using the string value e.g. item (with quote="'") -> 'item'; (default = False.)
 
     ## Returns
     Modified string.
@@ -201,12 +225,15 @@ def join_items(items, join_with=", ", last_join=None, quote_items=False):
 
 def reverse_string(val):
     r"""
-    ## Description
     Reverses the characters in a string.
 
     ## Usage
+    
     ```python
-
+    s = 'abc'
+    print(reverse_string(s))
+    
+    >>> 'cba'
     ```
 
     ## Arguments
@@ -220,6 +247,13 @@ def reverse_string(val):
 def similar_words(word, possible_words):
     r"""
     Find similar words to a given word.
+
+    ## Arguments
+    - `word`: base word
+    - `possible_words`: list of words to check against
+
+    ## Returns
+    A list of similar words, often just one, but there may be more.
     """
     def _word_to_vector(word):
         from collections import Counter
@@ -351,22 +385,30 @@ def pluralize(word, cnt=2, plural=None):
     r"""
     ## Description
     Pluralize word if necessary.  The function makes its best guess at the plural form and handles
-    most cases well.  When in doubt you can 
+    most cases well. 
 
     ## Usage
+    
     ```python
     print(ru.pluralize('individual', 1))
     >>> 'individual'
 
     print(ru.pluralize('individual', 2))
     >>> 'individuals'
-
-    print(ru.pluralize('family', 1, plural='families'))
-    >>> 'individual'
-
-    print(ru.pluralize(2, 'individual'))
-    >>> 'individuals'
     ```
+
+    You can also explicitly define a plural form to use:
+
+    ```python
+    print(ru.pluralize('family', 1, plural='families'))
+    >>> 'family'
+
+    print(ru.pluralize('family', 2, plural='families'))
+    >>> 'families'
+    ```
+
+    This is valid, but at least in this case, `pluralize()` does the right thing.  This is the case 
+    for most strings.
 
     ## Arguments
     - `word` : singular form of the word
@@ -408,7 +450,7 @@ def create_banner(title, subtitle=None, size=98, border='', font="standard", cen
 
     - `title` : title to be printed in Figlet font
     - `subtitle` : optional subtitle text; if multi-line, can be a list of lines or a string with carriage returns
-    - `size` : total size of banner in characters (default 100)
+    - `size` : total size of banner in characters (default 98)
     - `border` : optional border character(s) e.g. "#' (default is '' i.e. no border)
     - `font` : Figlet font to use for title (default "standard", for more see http://www.figlet.org/examples.html)
     - `center` : center banner if True, left justify if False
@@ -453,6 +495,26 @@ def create_banner(title, subtitle=None, size=98, border='', font="standard", cen
     return banner
 
 def sort_alpha_num(items):
+    r"""
+    Sort values alphanumerically.  This is useful if you have strings that contain numbers as text.
+
+    ## Usage
+    ```python
+    l = ['b4', 'a100', 'a20', 'a3']
+
+    print(sorted(l))
+    >>> ['a100', 'a20', 'a3', 'b4']
+    
+    print(ru.sort_alpha_num(l))
+    >>> ['a3', 'a20', 'a100', 'b4']
+    ```
+
+    ## Arguments
+    - `items`: list of items to sort
+
+    ## Returns
+    Sorted list of items.
+    """
     data = {}
     keys = []
     sorted_items = []
@@ -471,15 +533,36 @@ def sort_alpha_num(items):
         sorted_items.append(data[key])
     return sorted_items
 
-def clone(data):
-    import json
-    return json.loads(json.dumps(data))
+def clone(data, method='deepcopy'):
+    r"""
+    Clone data.
+
+    ## Arguments
+    - `data`: data to be cloned
+    - `method`: one of 'deepcopy' (default), 'pickle', or 'json'
+
+    ## Returns
+    Data value as a string.
+    """
+    if method == 'deepcopy':
+        import copy
+        return copy.deepcopy(data)
+    elif method == 'pickle':
+        import pickle
+        return pickle.loads(pickle.dumps(data))
+    elif method == 'json':
+        import json
+        return json.loads(json.dumps(data))
 
 def die(msg):
     '''
-        Pretty printing of error messages.
-        # Arguments
+    Pretty printing of error messages.  Raises an exception.
+
+    ## Arguments
         - msg: Error message
+
+    ## Returns 
+    Nothing.  Function raises an exception.  
     '''
     print("\n")
     print(create_banner('ERROR', border='', size=80, font='isometric1'))

@@ -1,6 +1,4 @@
 r"""
-# `data.schema`
-
 The `data.schema` module features one exportable class, `DataManager` which can be used to:
 
 - validate data objects
@@ -11,10 +9,26 @@ can be validated and rendered.  This means you could not validate or render data
 classes.  
 """
 
-import fs, ru, re, json
-from regx import Regx 
+import fs
+import ru
+import re
+import json
+from rex import Rex
 import importlib.util as importer
 import textwrap
+
+VERSION = '1.2.0'
+
+r"""
+## History
+
+1.2:
+- Various bug fixes.
+
+1.1:
+- Added dict class `key-sort-func` schema attribute.  Allows user to specify custom key sort function for dict nodes where `keys` is not defined or `regx` is True for a speceifed entry in `keys`.
+
+"""
 
 TEST = []
 
@@ -37,6 +51,7 @@ class DataManager():
     Validate and render data object (as YAML).
 
     ## Usage
+    
     ```python
     from data.schema import DataManager
     import yaml, fs
@@ -104,6 +119,7 @@ class DataManager():
     def __init__(self, schema, module_file=None, root_rule_name='root', verbosity=1):
         self.schema = None
         self.root_rule_name = None
+        self.render = DataManagerRenderOptions()
         self.initialize(schema, module_file, root_rule_name, verbosity)
     
     ##########
@@ -134,7 +150,7 @@ class DataManager():
         self.schema = schema         # schema object
         self.validated_rules = {}    # hash of validated rule names
         self.debug_index = 0
-        self.render = DataManagerRenderOptions()
+        # self.render = DataManagerRenderOptions()
 
         if schema is None: raise Exception('Parameter schema cannot be None.')
         if type(schema) is not dict: raise Exception('Parameter schema is not a dict object.')
@@ -185,11 +201,19 @@ class DataManager():
         '''
         # Get schema rule object.
         if rule_name is None: return()
-        if not rule_name in self.schema: raise Exception('Schema rule name "{}" not defined in schema object.'.format(rule_name))
+
+        if not rule_name in self.schema:
+            # If a rule is not specified, checks (and recursive checks) are suspended for the data 
+            # node.  If a schema is used twice, the rule of type None is given the name 
+            # '__undefined__'.  Check for that here and return if found.  
+            if rule_name == '__undefined__': 
+                return
+            raise Exception('Schema rule name "{}" not defined in schema object.'.format(rule_name))
         schema_rule = self.schema[rule_name]
         
         # Identify and validate rule 'class' attribute.
-        if not 'class' in schema_rule: raise Exception('Required attribute "class" not defined for schema rule "{}".'.format(rule_name))
+        if not 'class' in schema_rule: # pragma: no coverage
+            raise Exception('Required attribute "class" not defined for schema rule "{}".'.format(rule_name))
         rule_class = str(schema_rule['class']).lower()
         
         # Rule class must must be one of 'str', 'int', 'float', 'list', 
@@ -217,7 +241,7 @@ class DataManager():
             self.validated_rules[rule_name] = True
             return()
         elif rule_class == 'dict':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['keys', 'min-count', 'max-count', 'comment', 'default', 
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['keys', 'min-count', 'max-count', 'key-sort-func', 'comment', 'default', 
                 'render', 'root', 'pre-validation-func', 'post-validation-func'])
             i = 0
             if 'keys' in schema_rule:
@@ -228,7 +252,8 @@ class DataManager():
                     i += 1
             self.validated_rules[rule_name] = True
             return()
-        raise Exception('Invalid schema rule class "{}" for schema rule "{}"'.format(rule_class, rule_name))
+        else: # pragma: no coverage
+            raise Exception('Invalid schema rule class "{}" for schema rule "{}"'.format(rule_class, rule_name))
     
     ##########
 
@@ -267,6 +292,7 @@ class DataManager():
             Validate data using the pre-defined schema.
             
             ### Usage
+            
             ```python 
             self.validate(data)
             ```
@@ -391,13 +417,13 @@ class DataManager():
             # If 'matches' attribute is defined, ensure that the value matches the expression.
             if 'matches' in schema_rule:
                 matches = str(schema_rule['matches'])
-                regx = Regx()
-                if regx.m(matches, r'^\s*\/(.*?)\/(.*?)\s*$'):
-                    expression = regx.group[0]
-                    flags = regx.group[1]
-                    if not regx.m(data, expression, flags):
+                rex = Rex()
+                if rex.m(matches, r'^\s*\/(.*?)\/(.*?)\s*$'):
+                    expression = rex.d(1)
+                    flags = rex.d(2)
+                    if not rex.m(data, expression, flags):
                         raise Exception('{} object {} = "{}" does not match {}.'.format(object_type, node, data, matches))
-                elif not regx.m(data, matches, ''):
+                elif not rex.m(data, matches, ''):
                     raise Exception('{} object {} = "{}" does not match {}.'.format(object_type, node, data, matches))
 
             # If 'in' attribute is defined, ensure that the value is in the designated list.
@@ -450,7 +476,7 @@ class DataManager():
             # If 'max-count' attribute is defined, ensure that number of elements is less than or
             # equal to the value indicated.
             if 'max-count' in schema_rule:
-                max_count = schema_rule['max_count']
+                max_count = schema_rule['max-count']
                 text = '' if num_elements == 1 else 's'
                 if num_elements > max_count: 
                     raise Exception('{} object "{}" has {} element{}. Maximum of {} allowed.'.format(object_type, node, num_elements, text, max_count))
@@ -607,36 +633,27 @@ class DataManager():
         self.__to_yml_recurse(data, None, rule_name, rule_name, [], 0)
 
         # Do list compaction if requested.
-        regx = Regx()
+        rex = Rex()
         if self.render.yaml.enable_list_compaction:
             remove_line_index = []
             for i, line in enumerate(self.lines):
-                if regx.match(line, r'^(\s*)(-\s*)\n$', ''):
-                    first_part = regx.group[0] + regx.group[1]
+                if rex.m(line, r'^(\s*)(-\s*)\n$', ''):
+                    first_part = rex.d(1) + rex.d(2)
                     child_indent = '^' + " " * len(first_part)
-                    if len(self.lines) > i+1 and regx.s(self.lines[i+1], child_indent, first_part):
-                        self.lines[i+1] = regx.new
+                    if len(self.lines) > i+1 and rex.s(self.lines[i+1], child_indent, first_part):
+                        self.lines[i+1] = rex.new
                         remove_line_index.append(i)
-                elif regx.match(line, r'^(\s*)(-\s*)(\#.*?)\n$', ''):
-                    first_part = regx.group[0] + regx.group[1]
+                elif rex.m(line, r'^(\s*)(-\s*)(\#.*?)\n$', ''):
+                    first_part = rex.d(1) + rex.d(3)
                     child_indent = '^' + " " * len(first_part)
-                    comment = regx.group[2] + "\n"
-                    if len(self.lines) > i and regx.s(self.lines[i+1], child_indent, first_part):
+                    comment = rex.d(3) + "\n"
+                    if len(self.lines) > i and rex.s(self.lines[i+1], child_indent, first_part):
                         self.lines[i+0] = comment
-                        self.lines[i+1] = regx.new
+                        self.lines[i+1] = rex.new
             if len(remove_line_index) > 0:
                 remove_line_index.reverse()
                 for i in remove_line_index: self.lines.pop(i)
 
-        # This is an attempt to fix a bug in the code.  If (1) there is a dict key-value pair and 
-        # (2) the value is an empty dict i.e. {}, then the {} is printed on the line after the ":".
-        # This "fix" is a bit of a hack.  Please revisit in the future.  FIX!!! 
-        if True:
-            remove_line_index = []
-            for i in range(0, len(self.lines)):
-                self.lines[i] = regx.s(self.lines[i], r'(:\s+)\n(\{\})\s*$', r'\1\2\n', '=')
-                self.lines[i] = regx.s(self.lines[i], r'(:\s+)\n(\[\])\s*$', r'\1\2\n', '=')
-                
         # Return the data.
         return("".join(self.lines))
     
@@ -656,9 +673,10 @@ class DataManager():
             If file is not specified, returns the data encoded as YML. Otherwise, returns nothing.    
         '''
         tab = ' ' * self.render.yaml.number_indent_spaces
-        list_tab = '-' + ' ' * (len(tab)-1)
+        # list_tab = '-' + ' ' * (len(tab)-1)
+        list_tab = '-' + ' '
         schema = self.schema
-        r = Regx()
+        rex = Rex()
 
         data_type = ru.stype(data)
         if rule_name == '__undefined__':
@@ -688,8 +706,8 @@ class DataManager():
             # if 'comment' in schema_rule:
             #     pass
             if 'insert' in render:
-                insert = r.s(render['insert'], r'\n\s*$', '', '=')
-                insert_lines = r.split(insert, r'\n')
+                insert = rex.s(render['insert'], r'\n\s*$', '', '=')
+                insert_lines = rex.split(insert, r'\n')
                 for insert_line in insert_lines:
                     self.lines.append((tab * (depth-1)) + '{}'.format(insert_line) + "\n")
             if 'padding-before' in render and bool(render['padding-before']):
@@ -706,8 +724,8 @@ class DataManager():
                         comment_temp = comment.replace('()', '')
                         if comment_temp.isidentifier():
                             comment = self.module_spec.__dict__[comment_temp](parent_data_key, data)
-                comment = r.s(comment, r'\n\s*$', '', '=')
-                comment_lines = r.split(comment, r'\n')
+                comment = rex.s(comment, r'\n\s*$', '', '=')
+                comment_lines = rex.split(comment, r'\n')
                 for comment_line in comment_lines:
                     item = self.lines.pop(-1)
                     if not comment_line.startswith('#'): comment_line = '# ' + comment_line
@@ -725,7 +743,7 @@ class DataManager():
                 list_depth = depth - 1 if depth > 1 and not self.render.yaml.enable_list_inset else depth
                 if collapse: 
                     if parent_collapse: 
-                        self.lines[-1] = r.s(self.lines[-1], r'\n$', '', 's=')
+                        self.lines[-1] = rex.s(self.lines[-1], r'\n$', '', 's=')
                         # self.lines.append((tab * list_depth) + tab)
                     self.lines.append('[')
                 for element in data:
@@ -755,32 +773,39 @@ class DataManager():
                             self.__to_yml_recurse(element, None, schema_rule['rule'], child_node, child_nodes, list_depth + 1, collapse)
                     number_of_entries += 1
                     i += 1
-                # If list has no elements, append [] to the parent element.
                 if collapse: 
-                    self.lines[-1] = r.s(self.lines[-1], r',\s*$', '', '=')
+                    self.lines[-1] = rex.s(self.lines[-1], r',\s*$', '', '=')
                     self.lines[-1]  += '], '
                     if parent_collapse: 
-                        self.lines[-1] = r.s(self.lines[-1], r',\s*$', '', '=')
+                        self.lines[-1] = rex.s(self.lines[-1], r',\s*$', '', '=')
                         if self.render.yaml.collapsed_line_length > 0:
                             wrapper = textwrap.TextWrapper()
                             wrapper.initial_indent = ''
-                            wrapper.subsequent_indent = tab * (list_depth + 1)
+                            wrapper.subsequent_indent = tab * (list_depth + 1) + '  '
                             wrapper.width = self.render.yaml.collapsed_line_length
                             new_lines = wrapper.wrap(self.lines[-1])
                             self.lines[-1] = "\n".join(new_lines)
                         self.lines[-1] += "\n"
+                # If list has no elements, append [] to the parent element.
                 elif number_of_entries == 0:
-                    if r.s(self.lines[-1], r'(:\s*)$', r'\1[]\n'): 
-                        self.lines[-1] = r.new.replace('\n[]', '[]')
+                    self.lines[-1] = self.lines[-1].rstrip() + ' []\n'
                 break
 
             if data_type == 'dict' and rule_class == 'dict':
                 number_of_entries = 0
                 if collapse: 
                     if parent_collapse: 
-                        self.lines[-1] = r.s(self.lines[-1], r'\n$', '', 's=')
+                        self.lines[-1] = rex.s(self.lines[-1], r'\n$', '', 's=')
                         # self.lines.append(tab * depth)
                     self.lines.append('{')
+                key_sort = None
+                if 'key-sort-func' in schema_rule:
+                    key_sort = schema_rule['key-sort-func']
+                    if type(key_sort) == str:
+                        if key_sort.startswith('str.'):
+                            key_sort = eval(key_sort)
+                        else:
+                            key_sort = self.module_spec.__dict__[key_sort]
                 if 'keys' in schema_rule:
                     valid_key_hashes = schema_rule['keys']
                     did_it = {}
@@ -788,10 +813,10 @@ class DataManager():
                     for valid_key_hash in valid_key_hashes:
                         schema_key = valid_key_hash['name']
                         is_regx = True if 'regx' in valid_key_hash and bool(valid_key_hash['regx']) else False
-                        for data_key in sorted(data.keys()):
+                        for data_key in sorted(data.keys(), key=key_sort):
                             if data_key in did_it: continue
                             match0 = True if not is_regx and (data_key == schema_key) else False
-                            match1 = True if is_regx and (r.m(data_key, schema_key)) else False
+                            match1 = True if is_regx and (rex.m(data_key, schema_key)) else False
                             if match0 or match1:
                                 did_it[data_key] = True
                                 child_rule_name = valid_key_hash['rule']
@@ -820,7 +845,7 @@ class DataManager():
                                     self.__to_yml_recurse(value, data_key, child_rule_name, child_node, child_nodes, depth + 1, collapse)
                                 number_of_entries += 1
                 else:
-                    for data_key in sorted(data.keys()):
+                    for data_key in sorted(data.keys(), key=key_sort):
                         child_rule = '__undefined__'
                         child_rule_name = '__undefined__'
                         child_node = '{}'.format(node)
@@ -844,46 +869,56 @@ class DataManager():
                             else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + "\n")
                             self.__to_yml_recurse(value, data_key, child_rule_name, child_node, child_nodes, depth + 1, collapse)
                         number_of_entries += 1
-                # If dict has no keys, append {} to the parent element.
                 if collapse: 
-                    self.lines[-1] = r.s(self.lines[-1], r',\s*$', '', 's=')
+                    self.lines[-1] = rex.s(self.lines[-1], r',\s*$', '', 's=')
                     self.lines[-1] += '}, '
                     if parent_collapse: 
-                        self.lines[-1] = r.s(self.lines[-1], r',\s*$', '', '=')
+                        self.lines[-1] = rex.s(self.lines[-1], r',\s*$', '', '=')
                         if self.render.yaml.collapsed_line_length > 0:
                             wrapper = textwrap.TextWrapper()
                             wrapper.initial_indent = ''
-                            wrapper.subsequent_indent = tab * (depth + 1)
+                            wrapper.subsequent_indent = tab * (depth + 1) + '  '
                             wrapper.width = self.render.yaml.collapsed_line_length
                             new_lines = wrapper.wrap(self.lines[-1])
                             self.lines[-1] = "\n".join(new_lines)
                         self.lines[-1] += "\n"
+                # If dict has no keys, append {} to the parent element.
                 elif number_of_entries == 0:
-                    if r.s(self.lines[-1], r'(:\s*)$', r'\1{}'): self.lines[-1] = r.new
+                    self.lines[-1] = self.lines[-1].rstrip() + ' {}\n'
+                break
+
+            # If data is None and 'allow-null' is True.
+            if data is None:
+                if 'allow-null' in schema_rule and bool(schema_rule['allow-null']):
+                    self.lines[-1] = self.lines[-1].rstrip() + ' ~\n'
+                    break
+
+            # Special case.
+            if data is None and rule_class == 'nonetype':
                 break
 
             # If we get here, there's a problem!
             raise Exception('Data of type "{}" cannot be reconciled with schema "{}".'.format(data_type, rule_class))    
     
     def __yml_quote_key(self, value):
-        r = Regx()
-        if r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'[:#\\]') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+        rex = Rex()
+        if rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'[:#\\]') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
             return(self.__yml_quote(value))
         return(value)
     
     def __yml_quote_data(self, value, level):
         if value is None: return('~')
         if level >= 0:
-            r = Regx()
+            rex = Rex()
             tab = ' ' * self.render.yaml.number_indent_spaces
-            if r.m(value, r'\n'):
-                lines = r.split(value, r'\n')
+            if rex.m(value, r'\n'):
+                lines = rex.split(value, r'\n')
                 for i,line in enumerate(lines):
                     lines[i] = (tab * (level+1)) + line
                 value = '|\n' + '\n'.join(lines)
-                value = r.s(value, r'\s*\n\s*$', '', 's=')
+                value = rex.s(value, r'\s*\n\s*$', '', 's=')
                 return(value)
-            if len(value) == 0 or r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^[\!\*]') or r.m(value, r'[#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^[\!\*]') or rex.m(value, r'[#\\:\']') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
@@ -892,11 +927,11 @@ class DataManager():
     def __yml_quote_data_collapsed(self, value, level):
         if value is None: return('~')
         if level >= 0:
-            r = Regx()
-            if r.m(value, r'\n'):
-                value = r.s(value, r'\n\s*$', '', '=')
+            rex = Rex()
+            if rex.m(value, r'\n'):
+                value = rex.s(value, r'\n\s*$', '', '=')
                 return(self.__yml_quote(value, True))
-            if len(value) == 0 or r.m(value, r'^[\!\*]') or r.m(value, r'[\s#\\:\']') or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or rex.m(value, r'^[\!\*]') or rex.m(value, r'[\s#\\:\']') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
@@ -904,50 +939,50 @@ class DataManager():
     
     def __yml_quote_item(self, value, level):
         if value is None: return('~')
-        r = Regx()
+        rex = Rex()
         if level >= 0:
             tab = ' ' * self.render.yaml.number_indent_spaces
-            if r.m(value, r'\n'):
-                lines = r.split(value, r'\n')
+            if rex.m(value, r'\n'):
+                lines = rex.split(value, r'\n')
                 for i,line in enumerate(lines):
                     lines[i] = (tab * (level+2)) + line
                 value = '|\n' + '\n'.join(lines)
                 return(value)
-            if r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^\W') or r.m(value, r':') or r.m(value, r"'") or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if rex.m(value, r'^\s+') or rex.m(value, r'\t') or rex.m(value, r'\s+$') or rex.m(value, r'^\W') or rex.m(value, r':') or rex.m(value, r"'") or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
-            if r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^\W') or r.m(value, r':') or r.m(value, r"'") or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^\W') or rex.m(value, r':') or rex.m(value, r"'") or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
 
     def __yml_quote_item_collapsed(self, value, level):
         if value is None: return('~')
-        r = Regx()
+        rex = Rex()
         if level >= 0:
             tab = ' ' * self.render.yaml.number_indent_spaces
-            if r.m(value, r'\n'):
-                lines = r.split(value, r'\n')
+            if rex.m(value, r'\n'):
+                lines = rex.split(value, r'\n')
                 for i,line in enumerate(lines):
                     lines[i] = (tab * (level+2)) + line
                 value = '|\n' + '\n'.join(lines)
                 return(value)
-            if r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^\W') or r.m(value, r':\s+') or r.m(value, r"'") or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^\W') or rex.m(value, r':\s+') or rex.m(value, r"'") or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
-            if r.m(value, r'^\s+') or r.m(value, r'\s+$') or r.m(value, r'^\W') or r.m(value, r':\s+') or r.m(value, r"'") or r.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^\W') or rex.m(value, r':\s+') or rex.m(value, r"'") or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
 
     def __yml_quote(self, value, double_quote=False):
-        r = Regx()
+        rex = Rex()
         if self.render.yaml.enable_double_quote or double_quote:
-            if r.s(value, r"\"", r"\\\"", 'g'): value = r.new
-            if r.s(value, r"\n", r"\\n", 'g'): value = r.new
+            if rex.s(value, r"\"", r"\\\"", 'g'): value = rex.new
+            if rex.s(value, r"\n", r"\\n", 'g'): value = rex.new
             value = "\"" + value + "\""
         else:
-            if r.s(value, r"'", r"''", 'g'): value = r.new
+            if rex.s(value, r"'", r"''", 'g'): value = rex.new
             value = "'" + value + "'"
         return(value)
 

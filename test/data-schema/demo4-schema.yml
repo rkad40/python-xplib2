@@ -1,0 +1,40 @@
+Root: 
+  class: dict
+  keys:
+  - {name: 'Dict1', rule: 'Dict1', required: True}
+  - {name: 'Dict2', rule: 'Dict2', required: True}
+  - {name: 'Dict3', rule: 'Dict3', required: True}
+  - {name: 'Dict4', rule: 'Dict4', required: False}
+  - {name: 'Dict\d+', regx: true, rule: 'DictAnon', required: False}
+  - {name: 'List\d+', regx: true, rule: 'ListAnon', required: False}
+  key-sort-func: custom_sort
+  root: True
+Dict1:
+  class: dict
+  keys:
+  - {name: '\w+', regx: true, rule: Value, required: false}
+  min-count: 4
+  max-count: 6
+  pre-validation-func: pre_data_validation
+  post-validation-func: post_data_validation
+Dict2:
+  class: dict
+  keys:
+  - {name: '\w+', regx: true, rule: Value, required: false}
+  key-sort-func: str.lower
+Dict3:
+  class: dict
+  keys:
+  - {name: '\w+', regx: true, rule: Value, required: false}
+  key-sort-func: custom_sort
+Dict4:
+  class: dict
+DictAnon:
+  class: dict
+ListAnon:
+  class: list
+  rule: ~
+Value:
+  class: str
+
+  

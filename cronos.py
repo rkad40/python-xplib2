@@ -1,33 +1,31 @@
 r"""
-# cronos
 One-stop shop for dealing with time.
 
 ## Description
 You can use `cronos` in two different ways.  `cronos` exports a `Time` class:
 
-```
-    from cronos import Time
-    t = Time()  
+```python
+from cronos import Time
+t = Time()  
 ```
 
 It also exports several standalone functions:
 
-```
-    from cronos import epoch, local_time, sleep
-    s = epoch()
+```python
+from cronos import epoch, local_time, sleep
+s = epoch()
 ```
 """
 
 import time, datetime
-from regx import Regx
 
 class Time():
     r"""
-    ## Description
     Instantiate a cronos `Time` object.
 
     ## Usage
-    ```
+    
+    ```python
     from cronos import Time
     t0 = Time()  # Current time
     t1 = Time(1590761574)  # Epoch seconds as integer
@@ -38,14 +36,42 @@ class Time():
     ```
 
     ## Arguments
-    - `value` : Optional time value.  If not specified, current date/time is used.  Can be epoch 
-    int or float, or various string representations.  If the value is not an int, float or string, 
-    `Time()` tries to render it as str and then parse.  So value can be something like 
-    `datetime.datetime.now()`.
-    - `fmt` : Specify an output format.  If none, `Time()` attempts to get from the passed in value.
-    If all else fails, it uses ISO standard date and time i.e. "%Y-%m-%d %H:%M:%S".
+    - `value` : Optional time value.  If not specified, current date/time is used.  Can be epoch int or float, or various string representations.  If the value is not an int, float or string,  `Time()` tries to render it as str and then parse.  So value can be something like `datetime.datetime.now()`.
+    - `fmt` : Specify an output format.  If none, `Time()` attempts to get from the passed in value. If all else fails, it uses ISO standard date and time i.e. "%Y-%m-%d %H:%M:%S".
+
+    ## Formats
+
+    Format strings use the following sytnax:
+    
+    | Code | Description                          | Example             |
+    | :--- | :----------------------------------- | :----------------   |
+    | %a   | Weekday, short version               | Wed                 |
+    | %A   | Weekday, full version                | Wednesday           |
+    | %w   | Weekday as a number 0-6, 0 is Sunday | 3                   |
+    | %d   | Day of month 01-31                   | 31                  |
+    | %b   | Month name, short version            | Dec                 |
+    | %B   | Month name, full version             | December            |
+    | %m   | Month as a number 01-12              | 12                  |
+    | %y   | Year, short version, without century | 18                  |
+    | %Y   | Year, full version                   | 2018                |
+    | %H   | Hour 00-23                           | 17                  |
+    | %I   | Hour 00-12                           | 5                   |
+    | %p   | AM/PM                                | PM                  |
+    | %M   | Minute 00-59                         | 41                  |
+    | %S   | Second 00-59                         | 8                   |
+    | %f   | Microsecond 000000-999999            | 548513              |
+    | %z   | UTC offset                           | 100                 |
+    | %Z   | Timezone                             | CST                 |
+    | %j   | Day number of year 001-366           | 365                 |
+    | %U   | Week number of year, base Sunday     | 52                  |
+    | %W   | Week number of year, base Monday     | 52                  |
+    | %c   | Local version of date and time       | Mon Dec 31 17:41:0  |
+    | %x   | Local version of date                | 12/31/2018          |
+    | %X   | Local version of time                | 17:41:00            |
+    | %%   | A % character                        | %                   |
 
     ## Returns
+    
     A `Time` object.  In string contexts, the time rendered using the specified `fmt` value. 
 
     """
@@ -152,11 +178,10 @@ class Time():
     @staticmethod
     def rand(start, end=None):
         r"""
-        ## Description
         Return a random Time object.
         
         ## Usage
-        ```
+        ```python
         from cronos import Time
         t = Time.rand()
         ```
@@ -176,11 +201,10 @@ class Time():
 
 def epoch(cast=None, fmt=None): 
     r"""
-    ## Description
     Get seconds since epoch.
 
     ## Usage
-    ```
+    ```python
     import cronos
     # Print epoch time as float:
     print(cronos.epoch())
@@ -207,11 +231,10 @@ def epoch(cast=None, fmt=None):
 
 def local_time(epoch=None):
     r"""
-    ## Description
     Return local time string (via `time.ctime()` e.g. "Thu Dec 27 15:49:29 2018").
     
     ## Usage
-    ```
+    ```python
     import cronos
     print(cronos.local_time())
     >>> Fri May 29 09:12:53 2020
@@ -227,7 +250,6 @@ def local_time(epoch=None):
 
 def sleep(seconds):
     r"""
-    ## Description
     Pause program execution for specified number of seconds.
     
     ## Usage

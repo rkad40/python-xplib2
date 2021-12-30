@@ -1,11 +1,12 @@
 '''
-# `fs`
 A plethora of file system functions.
 
 ## Usage
-```
+
+```python
 import fs
 ```
+
 '''
 
 import os, sys, re, filecmp, shutil, time, io
@@ -16,7 +17,8 @@ def open_file(path, mode='r', encoding=None):
     Open a file.
     
     ## Usage
-    ```
+    
+    ```python
     fstream = fs.open_file(file_path)
     ```
     
@@ -25,6 +27,9 @@ def open_file(path, mode='r', encoding=None):
     - `mode='r'`: 'r' for read, 'w' for write
     - `encoding`: encoding
     
+    ## Aliases
+    `open_file`, `fopen`
+
     ## Returns
     file stream (use `close()` to close when done)
   '''
@@ -39,7 +44,8 @@ def read_file(path, to_string = False, to_iter = False, encoding=None):
     Read file and return a list of lines.
     
     ## Usage
-    ```
+    
+    ```python
     my_lines = fs.read_file(path)
     ```
     
@@ -49,6 +55,9 @@ def read_file(path, to_string = False, to_iter = False, encoding=None):
     - `to_iter`: optional bool; if True return content is an iterator
     - `encoding`: encoding
     
+    ## Aliases
+    `read_file`, `fread`, `read`
+
     ## Returns
     list of lines each of typ str (or a single string if to_string is True)
   '''
@@ -64,18 +73,6 @@ def read_file(path, to_string = False, to_iter = False, encoding=None):
     lines = f.readlines()
     f.close()
     return(lines)
-  # except UnicodeDecodeError:
-  #   f = open(path, 'r', encoding="ansi")
-  #   if to_iter:
-  #     return(f)
-  #   if to_string:
-  #     text = "".join(f.readlines())
-  #     f.close()
-  #     return(text)
-  #   else:
-  #     lines = f.readlines()
-  #     f.close()
-  #     return(lines)
 fread = read_file
 read = read_file
 
@@ -85,7 +82,8 @@ def write_file(path, content):
     Write content to file.
     
     ## Usage
-    ```
+    
+    ```python
     fs.write_file(path, content)
     ```
 
@@ -93,6 +91,9 @@ def write_file(path, content):
     - `path`: file as str
     - `content`: str or list data to write to file
     
+    ## Aliases
+    `write_file`, `fwrite`, `write`
+
     ## Returns
     nothing
   '''  
@@ -115,13 +116,17 @@ def delete_file(path):
     Delete a file.
     
     ## Usage
-    ```
+    
+    ```python
     fs.delete_file(path)
     ```
 
     ## Arguments
     - `path`: file as str
     
+    ## Aliases
+    `delete_file`, `unlink`, `fdelete`, `fdel`
+
     ## Returns
     nothing
   '''  
@@ -137,13 +142,17 @@ def delete_dir(path):
     Delete a directory.
     
     ## Usage
-    ```
+    
+    ```python
     fs.delete_dir(path)
     ```
 
     ## Arguments
     - `path`: directory as str
     
+    ## Aliases
+    `delete_dir`, `rmdir`
+
     ## Returns
     nothing
   '''  
@@ -159,7 +168,8 @@ def write_file_if_changed(path, content, create_dir=True, simple=False, mode=Non
     Write a file only if it results in a change.
     
     ## Usage
-    ```
+    
+    ```python
     fs.write_file_if_changed(path, content)
     ```
 
@@ -170,6 +180,9 @@ def write_file_if_changed(path, content, create_dir=True, simple=False, mode=Non
     - `simple`: if True, return simple status string (e.g. "created", "identical", or "updated"); if False, return bool (True if copied, False otherwise)
     - `mode`: assert file mode (default = None)  
     
+    ## Aliases
+    `write_file_if_changed`, `fwriteif`, `writeif`
+
     ## Returns
     A string indicating the action that was performed.
   '''  
@@ -205,13 +218,17 @@ def rename_file(orig_file, new_file):
     Rename or move a file.
     
     ## Usage
-    ```
+    
+    ```python
     fs.rename_file(orig_file, new_file)
     ```
 
     ## Arguments
     - `orig_file`: original file
     - `new_file`: new file
+    
+    ## Aliases
+    `rename_file`, `frename`, `rename`
     
     ## Returns
     New file name.
@@ -228,12 +245,16 @@ def get_file_name(path):
     Get the base file name.
     
     ## Usage
-    ```
+    
+    ```python
     file_name = fs.get_file_name(path)
     ```
 
     ## Arguments
     - `path`: file as str
+    
+    # Aliases
+    `get_file_name`, `filename`, `fname`
     
     ## Returns
     Base file name as str.
@@ -250,12 +271,16 @@ def get_root_name(path):
     Get the root file name.
     
     ## Usage
-    ```
+    
+    ```python
     root_name = fs.get_root_name(path)
     ```
 
     ## Arguments
     - `path`: file as str
+    
+    ## Aliases
+    `get_root_name`, `froot`, `rootname`
     
     ## Returns
     Root file name as str (i.e. `fs.get_file_name()` minus extension).
@@ -265,6 +290,7 @@ def get_root_name(path):
   return(rval)
 
 froot = get_root_name
+rootname = get_root_name
 
 def prepend_root_name(path, val):
   '''
@@ -272,7 +298,8 @@ def prepend_root_name(path, val):
     Prepend val to the file root name (before the root name).
     
     ## Usage
-    ```
+    
+    ```python
     orig_file = '/home/files/test.txt'
     temp_file = fs.append_root_name(orig_file, '.')
     # now temp_file = 'home/files/.test.txt'
@@ -281,6 +308,9 @@ def prepend_root_name(path, val):
     ## Arguments
     - `path`: file as str
     - `val`: token to prepend to root name
+    
+    ## Aliases
+    `prepend_root_name`, `prepend`
     
     ## Returns
     File name as string.
@@ -300,7 +330,8 @@ def append_root_name(path, val):
     Append val to the file root name (before the extension).
     
     ## Usage
-    ```
+    
+    ```python
     orig_file = '/home/files/test.txt'
     temp_file = fs.append_root_name(orig_file, '-temp')
     # now temp_file = 'home/files/test-temp.txt'
@@ -310,6 +341,9 @@ def append_root_name(path, val):
     - `path`: file as str
     - `val`: token to append to root name
     
+    ## Aliases
+    `append_root_name`, `append`
+
     ## Returns
     File name as string.
   '''
@@ -328,12 +362,16 @@ def remove_ext(path):
     Remove the extension from file name.
     
     ## Usage
-    ```
+    
+    ```python
     file_name = fs.get_ext(path)
     ```
 
     ## Arguments
     - `path`: file as str
+    
+    ## Aliases
+    `remove_ext`, `rmext`
     
     ## Returns
     Path minus file extension as str.
@@ -350,12 +388,16 @@ def get_ext(path):
     Get the file extension.
     
     ## Usage
-    ```
+    
+    ```python
     ext = fs.get_ext(path)
     ```
 
     ## Arguments
     - `path`: file as str
+    
+    ## Aliases
+    `get_ext`, `ext`
     
     ## Returns
     File extension as str in lower case.
@@ -374,7 +416,8 @@ def fsplit(path):
     Split file name return tuple of root name and ext (lower case).
     
     ## Usage
-    ```
+    
+    ```python
     root,ext = fs.fsplit(path)
     ```
 
@@ -400,13 +443,17 @@ def get_dir_name(path,count=1):
     Get dir name.
     
     ## Usage
-    ```
+    
+    ```python
     dir = fs.get_dir_name(path)
     ```
 
     ## Arguments
     - `path`: file as str
     - `count`: depth (default = 1)
+    
+    ## Aliases
+    `get_dir_name`, `dirname`
     
     ## Returns
     Dir name as string.
@@ -418,7 +465,6 @@ def get_dir_name(path,count=1):
     count -= 1
   return(path)
   
-dname = get_dir_name
 dirname = get_dir_name
 
 def fix_path_name(*path):
@@ -427,13 +473,17 @@ def fix_path_name(*path):
     Fix path name (render as Windows path).
     
     ## Usage
-    ```
+    
+    ```python
     dir = fs.fix_path_name(path)
     ```
 
     ## Arguments
     - `path`: path as str tuple (e.g. 'C:', 'users/me')
     
+    ## Aliases
+    `fix_path_name`, `fix`
+
     ## Returns
     Windows style path as str.
   '''
@@ -451,12 +501,16 @@ def get_unix_path(path):
     Get the UNIX / Linux style path.
     
     ## Usage
-    ```
+    
+    ```python
     my_path = fs.get_unix_path(some_path)
     ```
 
     ## Arguments
     - `path`: file or folder path as str
+    
+    ## Aliases
+    `get_unix_path`, `unix`
     
     ## Returns
     Absolute path as str.
@@ -472,12 +526,16 @@ def file_exists(path):
     Test if file exists.
     
     ## Usage
-    ```
+    
+    ```python
     if fs.file_exists('C:/Data/Last.txt'): # Do something
     ```
 
     ## Arguments
     - `path`: file path
+    
+    ## Aliases
+    `file_exists`, `exists`
     
     ## Returns
     True if file exists, False otherwise.
@@ -492,12 +550,16 @@ def dir_exists(path):
     Test if dir path exists.
     
     ## Usage
+    
     ```
     if fs.dir_exists('C:/Data'): # Do something
     ```
 
     ## Arguments
     - `path`: dir path
+    
+    ## Aliases
+    `dir_exists`, `exists`
     
     ## Returns
     True if dir exists, False otherwise.
@@ -510,13 +572,17 @@ def get_rel_path(abs_path, base_path):
     Get the relative path.
     
     ## Usage
-    ```
+    
+    ```python
     my_path = fs.get_rel_path(long_path, base_path)
     ```
 
     ## Arguments
     - `abs_path`: absolute path to be converted into relative path
     - `base_path`: base path from which the relative path begins
+    
+    ## Aliases
+    `get_rel_path`, `rel`
     
     ## Returns
     Relative path as a str.
@@ -532,9 +598,14 @@ def get_app_data_path(abs_path, base_path):
     Get app data path %APPDATA%.
     
     ## Usage
-    ```
+    
+    ```python
     app_data_path = fs.get_app_data_path()
     ```
+    
+    ## Aliases
+    `get_app_data_path`, `appdata`
+
     ## Returns
     absolute path to %APPDATA%
   '''
@@ -548,9 +619,13 @@ def get_cwd():
     Get current working directory.
     
     ## Usage
-    ```
+    
+    ```python
     my_path = fs.get_cwd()
     ```
+    
+    ## Aliases
+    `get_cwd`, `cwd`
     
     ## Returns
     Absolute path as a str.
@@ -565,9 +640,13 @@ def change_dir(dir_path):
     Change directory.
     
     ## Usage
-    ```
+    
+    ```python
     fs.change_dir(dir_path)
     ```
+
+    ## Aliases
+    `change_dir`, `cd`
 
     ## Returns
     nothing
@@ -582,9 +661,13 @@ def get_script_file():
     Get current script file being executed.
     
     ## Usage
-    ```
+    
+    ```python
     this_script = fs.get_script_file()
     ```
+
+    ## Aliases
+    `get_script_dir`, `script`
 
     ## Returns
     Absolute path to current script file.
@@ -601,9 +684,13 @@ def get_script_dir():
     Get directory of the current script file being executed.
     
     ## Usage
-    ```
+    
+    ```python
     script_dir = fs.get_script_dir()
     ```
+
+    ## Aliases
+    `get_script_dir`, `scriptdir`
 
     ## Returns
     Absolute path to current script file directory.
@@ -618,13 +705,17 @@ def join_names(*args):
     Join items to form a path.
     
     ## Usage
-    ```
+    
+    ```python
     my_path = fs.join_names('C:/', 'Users', 'Me')
     ```
 
     ## Arguments
     - `args`: list of tokens to join
     
+    ## Aliases
+    `join_names`, `join`
+
     ## Returns
     Joined path as str.
   '''
@@ -638,13 +729,17 @@ def is_abs_path(path):
     Is the specified path absolute?
     
     ## Usage
-    ```
+    
+    ```python
     if fs.is_abs_path(path): print("Path is absolute.")
     ```
 
     ## Arguments
     - `path`: file or folder path as a string
     
+    ## Aliases
+    `is_abs_path`, `abs`
+
     ## Returns
     True if absolute path, else False.
   '''
@@ -658,13 +753,17 @@ def is_file(path):
     Is specified path a file?
     
     ## Usage
-    ```
+    
+    ```python
     if fs.is_file(path): print('{} is a file'.format(path))
     ```
 
     ## Arguments
     - `path`: file or folder path as a string
     
+    ## Aliases
+    `is_file`, `isfile`
+
     ## Returns
     True if a file, False otherwise.
   '''
@@ -678,13 +777,17 @@ def is_dir(path):
     Is specified path a directory?
     
     ## Usage
-    ```
+    
+    ```python
     if fs.is_dir(path): print('{} is a file'.format(path))
     ```
 
     ## Arguments
     - `path`: file or folder path as a string
     
+    ## Aliases
+    `is_dir`, `isdir`
+
     ## Returns
     True if a directory, False otherwise.
   '''
@@ -698,7 +801,8 @@ def get_abs_path(path, basepath=None):
     Get the absolute path.
     
     ## Usage
-    ```
+    
+    ```python
     my_path = fs.get_abs_path(path)
     ```
 
@@ -706,6 +810,9 @@ def get_abs_path(path, basepath=None):
     - `path`: file or folder path as a string
     - `basepath`: if specified, use this as the base path
     
+    ## Aliases
+    `get_abs_path`, `abs`
+
     ## Returns
     Absolute path as a str.
   '''
@@ -729,7 +836,8 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
     Yield matching files in specified path(s) as generator object.
     
     ## Usage
-    ```
+    
+    ```python
     # Iterator form
     for file in get_files(paths,regx,rec): print(file)
       
@@ -741,6 +849,9 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
     - `path`: a single path of type str -OR- a list of paths each of type str
     - `regx`: regular expression matching file name (default = '.*')
     - `rec`: recursive files search if True (default = True).
+    
+    ## Aliases
+    `get_files`, `files`
     
     ## Returns
     A generator object yielding full file names of type str.
@@ -765,7 +876,8 @@ def get_dirs(paths,regx=r'.*'):
     Yield matching directories in specified path(s) as generator object.
     
     ## Usage
-    ```
+    
+    ```python
     ## Iterator form
     for dir_name in get_dirs(paths,regx): print(dir_name)
       
@@ -776,6 +888,9 @@ def get_dirs(paths,regx=r'.*'):
     ## Arguments
     - `path`: a single path of type str -OR- a list of paths each of type str
     - `regx`: regular expression matching dir name (default = '.*')
+    
+    ## Aliases
+    `get_dirs`, `getdirs`, `dirs`
     
     ## Returns
     A generator object yielding full file names of type str.
@@ -798,13 +913,17 @@ def create_dir(path, mode=0x775):
     Create directory (or directories) recursively.
     
     ## Usage
-    ```
+    
+    ```python
     fs.create_dir(path, mode=0x755)
     ```
 
     ## Arguments
     - `path`: dir to create as str
     - `mode`: optional mode selection (default = 0x755)
+    
+    ## Aliases
+    `create_dir`, `mkdir`
     
     ## Returns
     A printable string indicating status.
@@ -823,7 +942,8 @@ def files_are_identical(file1, file2, rstrip=False):
     Compare two files returning True if identical, false otherwise.
     
     ## Usage
-    ```
+    
+    ```python
     if fs.files_are_identical(file1, file2)
     ```
 
@@ -831,6 +951,9 @@ def files_are_identical(file1, file2, rstrip=False):
     - `file1`: first file
     - `file2`: second file
     - `rstrip`: strip spaces at the end of each line
+    
+    ## Aliases
+    `files_are_identical`, `fsame`, `same`
     
     ## Returns
     True if identical, False otherwise.
@@ -854,7 +977,8 @@ def copy_file(src, tar, create_dirs=False, meta=False):
     Copy a file.
     
     ## Usage
-    ```
+    
+    ```python
     fs.copy_file(src, tar)
     ```
 
@@ -862,6 +986,9 @@ def copy_file(src, tar, create_dirs=False, meta=False):
     - `src`: source file
     - `tar`: target file
     - `meta`: copy meta data and permissions
+    
+    ## Aliases
+    `copy_file`, `fcopy`
     
     ## Returns
     A printable string indicating status.
@@ -882,9 +1009,11 @@ def copy_dir_if_changed(src, tar, omit=None, verbose=0, meta=False):
     Copy a dir.  Files are only copied if new or changed.
     
     ## Usage
-    ```
+    
+    ```python
     fs.copy_dir_if_changed(src, tar)
     ```
+    
     ## Arguments
     - `src`: source directory
     - `tar`: target directory
@@ -892,6 +1021,9 @@ def copy_dir_if_changed(src, tar, omit=None, verbose=0, meta=False):
     - `verbose`: verbose setting for printing (0=minimal to 3=maximum)
     - `meta`: copy meta data and permissions
     
+    ## Aliases
+    `copy_dir_if_changed`, `dcopy`
+
     ## Returns
     A printable string indicating status.
 
@@ -995,7 +1127,7 @@ def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True, si
     Copy a file only if it has been changed.
     
     ## Usage
-    ```
+    ```python
     fs.copy_file_if_changed(src, tar)
     ```
 
@@ -1007,6 +1139,9 @@ def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True, si
     - `rstat`: if True, return status string; if False, return bool (True if copied, False otherwise)
     - `simple`: if True, return simple status string (e.g. "created", "identical", or "updated"); if False, return bool (True if copied, False otherwise)
     
+    ## Aliases
+    `copy_file_if_changed`, `fcopyif`
+
     ## Returns
     A printable string indicating status.
   '''
@@ -1040,13 +1175,17 @@ def get_size(path):
     Get size of path or file.
     
     ## Usage
-    ```
+    
+    ```python
     size = fs.get_size(path)
     ```
 
     ## Arguments
     - `path`: file or directory path
     
+    ## Aliases
+    `get_size`, `size`
+
     ## Returns
     Size as int.
   '''  
@@ -1060,12 +1199,16 @@ def last_modified(path):
     Get last modified time stamp.
     
     ## Usage
-    ```
+    
+    ```python
     ts = fs.last_modified(path)
     ```
 
     ## Arguments
     - `path`: file or directory path
+
+    ## Aliases
+    `last_modified`, `modified`
     
     ## Returns
     Time stamp as int.
