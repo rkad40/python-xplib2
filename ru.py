@@ -1,5 +1,5 @@
 r"""
-Python "random utility" library.
+Python "random utilities" library.
 
 ## Usage
 
@@ -13,10 +13,10 @@ import random
 
 def stype(obj):
     '''
-        Get the type of an object as a string.
+    Get the type of an object as a string.
 
     ## Arguments
-        - obj: Object to inspect.
+    - obj: Object to inspect.
 
     ## Returns
     Object type as string.
@@ -26,11 +26,11 @@ string_type = stype
 
 def rint(min, max):
     '''
-        Return a random int between min and max integers (inclusive).
+    Return a random int between min and max integers (inclusive).
 
     ## Arguments
-        - min: Min int
-        - max: Max int inclusive (i.e. max is a possible return value)
+    - min: Min int
+    - max: Max int inclusive (i.e. max is a possible return value)
 
     ## Returns
     Random integer.
@@ -40,10 +40,10 @@ rand_int = rint
 
 def ritem(lst):
     '''
-        Return a random value from the list.
+    Return a random value from the list.
 
     ## Arguments
-        - lst: List of items
+    - lst: List of items
 
     ## Returns
     Random item from list.
@@ -53,14 +53,14 @@ rand_item = ritem
 
 def crange(c1, c2):
     '''
-        Return a list of characters in the range c1 to c2.
+    Return a list of characters in the range c1 to c2.
 
     ## Arguments
-        - c1: Start character
-        - c2: End character
+    - c1: Start character
+    - c2: End character
 
     ## Returns
-        List of characters.
+    List of characters.
     '''
     lst = []
     for c in range(ord(c1), ord(c2)+1):
@@ -70,10 +70,10 @@ char_range = crange
 
 def trim(s):
     '''
-        Remove leading and trailing white spaces from string s.
+    Remove leading and trailing white spaces from string s.
 
     ## Arguments
-        - s: String
+    - s: String
 
     ## Returns
     Resultant string.
@@ -88,6 +88,7 @@ def squote(s):
     Single quote a string for the purpose of embedding in a quote.
 
     ## Usage
+    
     Suppose you have a string that reads: `The captain said, "All hope's lost!".` assigned to a
     variable `s`:
     
@@ -156,6 +157,7 @@ def quote(s):
     """
     from rex import Rex
     rex = Rex()
+    s = str(s)
     if not rex.m(s, r"'"): return squote(s)
     if not rex.m(s, r'"'): return dquote(s)
     return squote(s) 
@@ -559,7 +561,7 @@ def die(msg):
     Pretty printing of error messages.  Raises an exception.
 
     ## Arguments
-        - msg: Error message
+    - msg: Error message
 
     ## Returns 
     Nothing.  Function raises an exception.  

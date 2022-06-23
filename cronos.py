@@ -24,7 +24,6 @@ class Time():
     Instantiate a cronos `Time` object.
 
     ## Usage
-    
     ```python
     from cronos import Time
     t0 = Time()  # Current time
@@ -42,7 +41,7 @@ class Time():
     ## Formats
 
     Format strings use the following sytnax:
-    
+
     | Code | Description                          | Example             |
     | :--- | :----------------------------------- | :----------------   |
     | %a   | Weekday, short version               | Wed                 |
@@ -71,7 +70,6 @@ class Time():
     | %%   | A % character                        | %                   |
 
     ## Returns
-    
     A `Time` object.  In string contexts, the time rendered using the specified `fmt` value. 
 
     """
@@ -140,36 +138,66 @@ class Time():
     # Properties (with getters and setters).
     def get_year(self): return(self.d.year)
     def set_year(self, value): d = self.d; self.d = datetime.datetime(value, d.month, d.day, d.hour, d.minute, d.second)
-    year = property(get_year, set_year)
+    year = property(get_year, set_year, doc='Get or set the year.')
     def get_month(self): return(self.d.month)
     def set_month(self, value): d = self.d; self.d = datetime.datetime(d.year, value, d.day, d.hour, d.minute, d.second)
-    month = property(get_month, set_month)
+    month = property(get_month, set_month, doc='Get or set the month.')
     def get_day(self): return(self.d.day)
     def set_day(self, value): d = self.d; self.d = datetime.datetime(d.year, d.month, value, d.hour, d.minute, d.second)
-    day = property(get_day, set_day)    
+    day = property(get_day, set_day, doc='Get or set the day.')    
     def get_hours(self): return(self.d.hour)
     def set_hours(self, value): d = self.d; self.d = datetime.datetime(d.year, d.month, d.day, value, d.minute, d.second)
-    hours = property(get_hours, set_hours)
+    hours = property(get_hours, set_hours, doc='Get or set the hour.')
+    hour = property(get_hours, set_hours, doc='Get or set the hour.')
     def get_minutes(self): return(self.d.minute)
     def set_minutes(self, value): d = self.d; self.d = datetime.datetime(d.year, d.month, d.day, d.hour, value, d.second)
-    minutes = property(get_minutes, set_minutes)
+    minutes = property(get_minutes, set_minutes, doc='Get or set the minutes.')
+    minute = property(get_minutes, set_minutes, doc='Get or set the minutes.')
     def get_seconds(self): return(self.d.second)
     def set_seconds(self, value): d = self.d; self.d = datetime.datetime(d.year, d.month, d.day, d.hour, d.minute, value)
-    seconds = property(get_seconds, set_seconds)
-    def set_time(self, hour, minute, second): d = self.d; self.d = datetime.datetime(d.year, d.month, d.day, hour, minute, second)
-    def set_date(self, year, month, day): d = self.d; self.d = datetime.datetime(year, month, day, d.hour, d.minute, d.second)
+    seconds = property(get_seconds, set_seconds, doc='Get or set the seconds.')
+    second = property(get_seconds, set_seconds, doc='Get or set the seconds.')
+    def set_time(self, hour, minute, second): 
+        r"""Set time (hours, minutes, seconds)."""
+        d = self.d; self.d = datetime.datetime(d.year, d.month, d.day, hour, minute, second)
+    def set_date(self, year, month, day): 
+        r"""Set date (year, month, day)."""
+        d = self.d; self.d = datetime.datetime(year, month, day, d.hour, d.minute, d.second)
     # Renderers.
-    def datetime_object(self): return self.d
-    def to_epoch(self, cast=float): return(cast(self.d.timestamp()))
+    def datetime_object(self): 
+        r"""Return the datetime object value."""
+        return self.d
+    def to_epoch(self, cast=float): 
+        r"""Return the seconds since epoch."""
+        return(cast(self.d.timestamp()))
     epoch = to_epoch
-    def iso(self): return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
-    def iso_long(self): return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
-    def iso_short(self): return(self.d.strftime('%Y-%m-%d %H:%M'))
-    def iso_date(self): return(self.d.strftime('%Y-%m-%d'))
-    def ansi_ctime_asctime(self): return(self.d.strftime(r'%a %b %e %H:%M:%S %Y'))
+    def iso(self): 
+        r"""Return date/time string in ISO format: "YYYY-MM-DD HH:MM:SS"."""
+        return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
+    def iso_long(self): 
+        r"""Return date/time string in long ISO format: "YYYY-MM-DD HH:MM:SS"."""
+        return(self.d.strftime('%Y-%m-%d %H:%M:%S'))
+    def iso_short(self): 
+        r"""Return date/time string in short ISO format: "YYYY-MM-DD HH:MM" (no seconds)."""
+        return(self.d.strftime('%Y-%m-%d %H:%M'))
+    def iso_date(self): 
+        r"""Return date string in short ISO format: "YYYY-MM-DD"."""
+        return(self.d.strftime('%Y-%m-%d'))
+    def ansi_ctime_asctime(self): 
+        r"""Return date/time string in ANSI ctime format e.g. "Wed Apr 20 5:30:15 2022"."""
+        return(self.d.strftime(r'%a %b %e %H:%M:%S %Y'))
+    @property
+    def timestamp(self): 
+        r"""Return timestamp e.g. "173015"."""
+        return(self.d.strftime(r'%H%M%S'))
+    @property
+    def datestamp(self): 
+        r"""Return datestamp e.g. "220420". Read only."""
+        return(self.d.strftime(r'%y%m%d'))
     ansi = ansi_ctime_asctime
     def __repr__(self): return(self.d.strftime(self.fmt))
     def julian_date(self):
+        r"""Return Julian date format."""
         fmt='%Y-%m-%d'
         d = datetime.datetime.strptime(self.iso_date(), fmt)
         d = d.timetuple()
@@ -198,7 +226,6 @@ class Time():
         max = Time(end).epoch()
         return Time(random.randint(min, max))
    
-
 def epoch(cast=None, fmt=None): 
     r"""
     Get seconds since epoch.

@@ -1,6 +1,4 @@
 '''
-# rex
-
 An intuitive regular expression class wrapper for Python's often confusing `re`
 regular expression module.
 
@@ -21,12 +19,25 @@ import re
 VERSION = '1.001'
 
 class Rex():
+    r"""
+    An intuitive regular expression class wrapper for Python's often confusing `re`
+    regular expression module.
+
+    ## Usage
+
+    ```python
+    from rex import Rex
+    rex = Rex()
+    ...
+    # Reformat lines of phone numbers.  
+    val = rex.s(val, r'^\s*(\d{3})(\d{3})(\d{4})\s*$', r'\1-\2-\3', '=gm')
+    ```
+    """
     def __init__(self): 
         self.clear()
     
     def clear(self):
         r'''
-            ## Description
             Reset `rex` object.
             
             ## Usage
@@ -52,8 +63,6 @@ class Rex():
 
     def d(self, i, j=None):
         r'''
-            ## Description
-            
             Access group `dollar` sign data (equivalently `data`, shortcut `d`).  The designation 
             `rex.dollar(1)` (or `rex.data(1)` or `rex.d(1)`) would be equivalent to $1 as implemented 
             in other scripting languages like Perl.  
@@ -118,7 +127,6 @@ class Rex():
 
     def next(self):
         r'''
-            ## Description
             Increment `rex.i`.  Can be used to loop through group sets when the `g` option is in 
             force.     
         '''
@@ -126,14 +134,12 @@ class Rex():
 
     def sets(self):
         r'''
-            ## Description
             Returns the number of group sets.     
         '''
         return len(self.matrix)
 
     def cnt(self, i=None):
         r'''
-            ## Description
             Return the count (or size) of a group set data object.  `rex.cnt()` returns the size of 
             the `rex.matrix[self.i]`.  `rex.cnt(0)` returns the size of `rex.matrix[0]`.  
         '''
@@ -145,7 +151,6 @@ class Rex():
 
     def m(self, var, pattern, opt=''):
         r'''
-            ## Description
             Regular expression match (`m` short form, `match` long form).
             
             ## Usage
@@ -226,7 +231,6 @@ class Rex():
 
     def s(self, var, find, replace, opt=''):
         r'''
-            ## Description
             Regular expression substitution (`s` short form, `sub` long form).
             
             ## Usage
@@ -355,7 +359,6 @@ class Rex():
 
     def split(self, var, pattern, opt='', cnt=0):
         r'''
-            ## Description
             Regular expression split.
             
             ## Usage
@@ -393,7 +396,6 @@ class Rex():
 
     def trim(self, var, opt='=s'):
         r'''
-            ## Description
             Trim leading and trailing spaces.
             
             ## Usage
@@ -421,7 +423,6 @@ class Rex():
     
     def unquote(self, var, opt='=s'):
         r'''
-            ## Description
             Remove leading and trailing quotes from string.
             
             ## Usage
@@ -450,7 +451,6 @@ class Rex():
 
     def escape(self, val):
         r'''
-            ## Description
             Escape meta characters in a string.
             
             ## Usage

@@ -3,7 +3,7 @@
 # Sitcom
 - Name: Modern Family
   Rating: 4.2
-  StillRunning: True
+  StillRunning: true
   CastMembers: 
   - {Character: 'Jay Pritchett', PlayedBy: 'Ed ONeill', Role: 'patriarch, father'}
   - {Character: 'Claire Dunphy', PlayedBy: 'Julie Brown', Role: 'Jay''s daughter'}
@@ -18,7 +18,7 @@
 # Sitcom
 - Name: The Office
   Rating: 2.0
-  StillRunning: False
+  StillRunning: false
   CastMembers: 
   - {Character: 'Michael Scott', PlayedBy: 'Steve Carell', Role: manager}
   - {Character: 'Jim Halpert', PlayedBy: 'John Krasinski', Role: salesman}

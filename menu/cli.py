@@ -1,4 +1,4 @@
-from regx import Regx
+from rex import Rex
 
 """
 Create interactive command line interface menus.
@@ -34,13 +34,13 @@ def get_input(message, default=None):
     # Returns
     User specified value.
     """
-    regx = Regx()
-    message = regx.s(message, r'\s*$', r'', '=')
+    rex = Rex()
+    message = rex.s(message, r'\s*$', r'', '=')
     print(message + "\n")
     if default is not None: print("Default is \"{}\".\n".format(default))
     value = input("INPUT: ")
     print()
-    value = regx.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
+    value = rex.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
     if default is not None and len(value) == 0: return(default)
     return(value)
 
@@ -56,8 +56,8 @@ def select_one(message, options, default=None):
     # Returns
     User selected value.
     """
-    regx = Regx()
-    message = regx.s(message, r'\s*$', r'', '=')
+    rex = Rex()
+    message = rex.s(message, r'\s*$', r'', '=')
     print(message + "\n")
     i_max = len(options)
     for i in range(0, i_max):
@@ -71,11 +71,11 @@ def select_one(message, options, default=None):
     while True:
         value = input('SELECTION: ')
         print()
-        value = regx.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
+        value = rex.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
         if default is not None and len(value) == 0:
             use_default = True
             break
-        if not regx.m(value, r'^\d+$'):
+        if not rex.m(value, r'^\d+$'):
             print("ERROR: Value \"{}\" is not a number.\n".format(value))
             continue
         value = int(value)
@@ -99,14 +99,15 @@ def select_mult(message, options, default=[]):
     # Returns
     The set of selected values.
     """
-    regx = Regx()
+    rex = Rex()
+    if default is None: default = []
     checked = {item: True for item in default}
     selected = {}
     i_max = len(options)
     for i in range(0, i_max):
         item = options[i]
         if item in checked: selected[i] = True
-    message = regx.s(message, r'\s*$', r'', '=')
+    message = rex.s(message, r'\s*$', r'', '=')
     def replace_range(m):
         nums = []
         for r in range(int(m[0]), int(m[2])+1): nums.append(str(r))
@@ -121,14 +122,14 @@ def select_mult(message, options, default=[]):
         print("Select space delimited options and/or actions: A=All, C=Clear, T=Toggle.\n\nHit <Enter> by itself, or D=Done, to continue.\n")
         values = input('SELECTION: ')
         print()
-        values = regx.s(values, r'(\d+)\s*(\.\.|to|-)\s*(\d+)', replace_range, 'g=')
-        values = regx.s(values, r'^\s*(.*?)\s*$', r'\1', 'g=')
-        values = regx.s(values, r',', r' ', 'g=')
+        values = rex.s(values, r'(\d+)\s*(\.\.|to|-)\s*(\d+)', replace_range, 'g=')
+        values = rex.s(values, r'^\s*(.*?)\s*$', r'\1', 'g=')
+        values = rex.s(values, r',', r' ', 'g=')
         if len(values) == 0: break
-        values = regx.split(values, r'\s+')
+        values = rex.split(values, r'\s+')
         done = False
         for value in values:
-            if regx.m(value, r'^\d+$'):
+            if rex.m(value, r'^\d+$'):
                 value = int(value)
                 if value < 1 or value > i_max:
                     print("ERROR: Value \"{}\" is not in the specified range.\n".format(value))
@@ -154,10 +155,10 @@ def select_mult(message, options, default=[]):
                 if value == 'D':
                     done = True
         if done: break
-    hash = set()
+    hash = []
     for i in range(0, i_max):
         if i in selected:
-            hash.add(options[i])
+            hash.append(options[i])
     return(hash)
 
 

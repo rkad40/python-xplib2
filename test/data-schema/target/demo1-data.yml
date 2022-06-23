@@ -26,7 +26,7 @@ Data:
       Austin, TX 78735
   Instructions: |
     This is an example of text that should fold. Folding means that the newlines are removed and replaced with spaces. If you see newlines after rendering, this did not work as expected.
-  Validated: False
+  Validated: false
   Devices: 
     LS1028: 
       Technology: C28

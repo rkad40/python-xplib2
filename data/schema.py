@@ -7,6 +7,15 @@ The `data.schema` module features one exportable class, `DataManager` which can 
 Currently the only serialization format supported is YAML.  One restriction is that only base types 
 can be validated and rendered.  This means you could not validate or render data objects with nested 
 classes.  
+
+## History
+
+1.2:
+- Various bug fixes.
+
+1.1:
+- Added dict class `key-sort-func` schema attribute.  Allows user to specify custom key sort function for dict nodes where `keys` is not defined or `regx` is True for a speceifed entry in `keys`.
+
 """
 
 import fs
@@ -18,17 +27,6 @@ import importlib.util as importer
 import textwrap
 
 VERSION = '1.2.0'
-
-r"""
-## History
-
-1.2:
-- Various bug fixes.
-
-1.1:
-- Added dict class `key-sort-func` schema attribute.  Allows user to specify custom key sort function for dict nodes where `keys` is not defined or `regx` is True for a speceifed entry in `keys`.
-
-"""
 
 TEST = []
 
@@ -47,7 +45,6 @@ class DataManagerRenderOptions():
 
 class DataManager():
     r"""
-    ## Description
     Validate and render data object (as YAML).
 
     ## Usage
@@ -68,6 +65,7 @@ class DataManager():
     ```
 
     ## Arguments
+    
     - `schema`: `DataManager` schema.  This defines the rules for validating and rendering data.
     - `module_file`: Additional interposer functions defined in the schema.  The functions are used 
     to modify and validate data.  Optional, defaults to `None`.
@@ -76,37 +74,32 @@ class DataManager():
     - `verbosity`=1: Currently does not do anything.
 
     ## Examples
-    Here are a few examples that illustrate how to use `DataManager`:
+    
+    Examples for `DataManager` can be found in the `tests` directory.  
 
     ### Example 1: Generic Data
 
     This example includes many different data object examples:  
 
-    - The source data file [`example-data.yml`](../test/data-schema/example-data.yml) features a 
-    wide range of YAML styled data objects.
-    - The schema file [`example-schema.yml`](../test/data-schema/example-schema.yml) is a YAML file 
-    that tells `DataManager` how to parse the source YAML: 
-    - The schema module [`example-schema.py`](../test/data-schema/example-schema.py) contains 
-    interposer routines references in `example-schema.yml` that are used to validate and update 
-    source data.
-    - The script file [`example-test.py`](../test/data-schema/example-test.py) reads the data file 
-    and uses the schema to validate it and render an output file 
-    [`example-test.py`](../test/data-schema/example-test.py)
+    - The source data file `example-data.yml` features a wide range of YAML styled data objects.
+    - The schema file `example-schema.yml` is a YAML file that tells `DataManager` how to parse the 
+      source YAML.
+    - The schema module `example-schema.py` contains interposer routines references in 
+      `example-schema.yml` that are used to validate and update source data.
+    - The script file `example-test.py` reads the data file and uses the schema to validate it and 
+      render an output file `example-test.py`.
 
     ### Example 2: Sitcoms
 
     This example illustrates the reach of `DataManager`:  
 
-    - The source data file [`example-data.yml`](../test/data-schema/example-data.yml) features a 
-    wide range of YAML styled data objects.
-    - The schema file [`example-schema.yml`](../test/data-schema/example-schema.yml) is a YAML file 
-    that tells `DataManager` how to parse the source YAML: 
-    - The schema module [`example-schema.py`](../test/data-schema/example-schema.py) contains 
-    interposer routines references in `example-schema.yml` that are used to validate and update 
-    source data.
-    - The script file [`example-test.py`](../test/data-schema/example-test.py) reads the data file 
-    and uses the schema to validate it and render an output file 
-    [`example-test.py`](../test/data-schema/example-test.py)
+    - The source data file `example-data.yml` features a wide range of YAML styled data objects.
+    - The schema file `example-schema.yml` is a YAML file  that tells `DataManager` how to parse the 
+      source YAML. 
+    - The schema module `example-schema.py` contains interposer routines references in 
+      `example-schema.yml` that are used to validate and update source data.
+    - The script file `example-test.py` reads the data file and uses the schema to validate it and 
+      render an output file `example-test.py`
 
     """
 
@@ -607,7 +600,7 @@ class DataManager():
             if data_type == dict:
                 i = 0
 
-        # If we get here it means that there is an invalid data_type / rule_class combination. 
+        # If we get here it means that there is an invalid data_type / rule_class combination.
         raise Exception('Data node {} is of type {}. This cannot be reconciled with {}.'.format(node, data_type, rule_class))
 
     ##########
@@ -750,8 +743,8 @@ class DataManager():
                     element_type = ru.stype(element)
                     # Render list items
                     if element_type == 'bool':
-                        if collapse: self.lines[-1] += str(bool(element)) + ", "
-                        else: self.lines.append((tab * list_depth) + list_tab + str(bool(element)) + "\n")
+                        if collapse: self.lines[-1] += str(bool(element)).lower() + ", "
+                        else: self.lines.append((tab * list_depth) + list_tab + str(bool(element)).lower() + "\n")
                     elif element_type == 'int' or element_type == 'float':
                         if collapse: self.lines[-1] += str(element) + ", "
                         else: self.lines.append((tab * list_depth) + list_tab + str(element) + "\n")
@@ -831,8 +824,8 @@ class DataManager():
                                 value = data[data_key]
                                 value_type = ru.stype(value)
                                 if value_type == 'bool':
-                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)) + ", "
-                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)) + "\n")
+                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + ", "
+                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + "\n")
                                 elif value_type == 'int' or value_type == 'float':
                                     if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(value) + ", "
                                     else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(value) + "\n")
@@ -856,8 +849,8 @@ class DataManager():
                         value = data[data_key]
                         value_type = ru.stype(value)
                         if value_type == 'bool':
-                            if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)) + ", "
-                            else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)) + "\n")
+                            if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + ", "
+                            else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + "\n")
                         elif value_type == 'int' or value_type == 'float':
                             if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(value) + ", "
                             else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(value) + "\n")
@@ -902,7 +895,7 @@ class DataManager():
     
     def __yml_quote_key(self, value):
         rex = Rex()
-        if rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'[:#\\]') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+        if value == '' or rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'[:#\\]') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
             return(self.__yml_quote(value))
         return(value)
     
@@ -918,7 +911,7 @@ class DataManager():
                 value = '|\n' + '\n'.join(lines)
                 value = rex.s(value, r'\s*\n\s*$', '', 's=')
                 return(value)
-            if len(value) == 0 or rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^[\!\*]') or rex.m(value, r'[#\\:\']') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or rex.m(value, r'^\s+') or rex.m(value, r'\s+$') or rex.m(value, r'^[\!\*\&]') or rex.m(value, r'[#\\:\']') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
@@ -931,7 +924,7 @@ class DataManager():
             if rex.m(value, r'\n'):
                 value = rex.s(value, r'\n\s*$', '', '=')
                 return(self.__yml_quote(value, True))
-            if len(value) == 0 or rex.m(value, r'^[\!\*]') or rex.m(value, r'[\s#\\:\']') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
+            if len(value) == 0 or rex.m(value, r'^[\!\*]') or rex.m(value, r'[\s#\\:\',]') or rex.m(value, r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'):
                 return(self.__yml_quote(value))
             return(value)
         else:
