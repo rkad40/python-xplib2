@@ -12,12 +12,28 @@ rex = Rex()
 rex.split
 
 class StyleBasicUnicode():
-    NODE_SPAN_NS   = "|  "
+    NODE_SPAN_NS   = "│  "
     NODE_CONT_NES  = "├──"
     NODE_CONT_NE   = "└──"
     NODE_BLANK     = "   "
+    ROOT_PREFIX    = "💻 "
     FILE_PREFIX    = "📄 "
     FOLDER_PREFIX  = "📁 " 
+    ROOT_SUFFIX    = "/"
+    FILE_SUFFIX    = ""
+    FOLDER_SUFFIX  = "/"
+    LINE_PREFIX    = ""
+    LINE_SUFFIX    = ""
+
+class StyleBasicASCII():
+    NODE_SPAN_NS   = " |  "
+    NODE_CONT_NES  = " |--"
+    NODE_CONT_NE   = " +--"
+    NODE_BLANK     = " "
+    ROOT_PREFIX    = " "
+    FILE_PREFIX    = " "
+    FOLDER_PREFIX  = " " 
+    ROOT_SUFFIX    = "/"
     FILE_SUFFIX    = ""
     FOLDER_SUFFIX  = "/"
     LINE_PREFIX    = ""
@@ -25,29 +41,30 @@ class StyleBasicUnicode():
 
 class Tree():
 
-    def __init__(self, dir=dir, hide=None, regexp=True, ign_case=False, style=StyleBasicUnicode):
+    def __init__(self, dir=dir, hide=None, regexp=True, ign_case=False, style=None):
         me = self 
+        me.style = style if style is not None else StyleBasicUnicode
         me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=style)
 
-    def reset(self, hide=None, regexp=True, ign_case=False, style=StyleBasicUnicode):
+    def reset(self, hide=None, regexp=True, ign_case=False, style=None):
         me = self
         me.hide = hide
         me.regexp = regexp
         me.ign_case = ign_case
-        me.style = style
+        me.style = style if style is not None else StyleBasicUnicode
         me.tree = []
         if me.hide is None: me.hide = []
         if type(me.hide) is str: me.hide = [me.hide]
 
-    def from_path(self, dir, hide=None, regexp=True, ign_case=False, style=StyleBasicUnicode):
+    def from_path(self, dir, hide=None, regexp=True, ign_case=False, style=None):
         me = self
-        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=style)
+        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=me.style)
         me.__recursive_path_descent(dir)
 
-    def from_dict(self, data, name='Top', hide=None, regexp=True, ign_case=False, style=StyleBasicUnicode):
+    def from_dict(self, data, name='Top', hide=None, regexp=True, ign_case=False, style=None):
         me = self
         me.name = name
-        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=style)
+        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=me.style)
         me.__recursive_data_descent(data)
 
     def __recursive_path_descent(self, dir, indent=''):
@@ -59,7 +76,7 @@ class Tree():
         files = []
 
         # If indent is nothing, we are at the top level.  
-        if indent == '': me.tree.append(fs.get_file_name(dir))
+        if indent == '': me.tree.append(me.style.ROOT_PREFIX + fs.get_file_name(dir)  + me.style.ROOT_SUFFIX)
         # Given `dir` file path, we first process folders in the the target directory, then 
         # files.
         groups = [(dirs, fs.get_dirs(dir)), (files, fs.get_files(dir, rec=False))]
@@ -121,8 +138,8 @@ class Tree():
         dirs = []
         files = []
 
-        # If indent is nothin, we are at the top level.  
-        if indent == '': me.tree.append(me.name)
+        # If indent is nothing, we are at the top level.  
+        if indent == '': me.tree.append(me.style.ROOT_PREFIX + me.name  + me.style.ROOT_SUFFIX)
         d = []
         f = []
         for key in data:
@@ -183,5 +200,13 @@ class Tree():
             me.tree.append(indent + pre + me.style.FILE_PREFIX + name + me.style.FILE_SUFFIX)
         
     def to_str(self):
+        me = self
+        return('\n'.join(me.tree))
+
+    def __str__(self):
+        me = self
+        return('\n'.join(me.tree))
+
+    def __repr__(self): 
         me = self
         return('\n'.join(me.tree))

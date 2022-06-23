@@ -23,5 +23,26 @@ class Objectify(object):
             l = getattr(self, key)
             for item in data:
                 l.append(Objectify(item))
-                
+
+class __object():
+    def __init__(self, obj, *keys):
+        self._obj = obj
+        self._keys = keys
+    @property
+    def val(self):
+        o = self._obj
+        for key in self._keys:
+            o = o[key]
+        return o
+    @val.setter
+    def val(self, val):
+        o = self._obj
+        for i in range(0, len(self._keys) - 1):
+            key = self._keys[i]
+            o = o[key]
+        o[self._keys[-1]] = val
+    
+def x(obj, *keys):
+    return __object(obj, *keys)
+
             

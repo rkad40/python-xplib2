@@ -592,7 +592,7 @@ def get_rel_path(abs_path, base_path):
 
 rel = get_rel_path
 
-def get_app_data_path(abs_path, base_path):
+def get_app_data_path():
   '''
     ## Description
     Get app data path %APPDATA%.
