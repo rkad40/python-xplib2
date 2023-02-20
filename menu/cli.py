@@ -1,5 +1,11 @@
 from rex import Rex
+import fs
 
+VERBOSITY = 1
+class DEBUG:
+    enable = False
+    inputs = []
+    
 """
 Create interactive command line interface menus.
 
@@ -43,6 +49,33 @@ def get_input(message, default=None):
     value = rex.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
     if default is not None and len(value) == 0: return(default)
     return(value)
+
+def file(message, default=None):
+    """
+    Get user file input.
+    
+    # Arguments
+    - message : message to print
+    - default : optional default value
+    
+    # Returns
+    User specified value.
+    """
+    rex = Rex()
+    message = rex.s(message, r'\s*$', r'', '=')
+    print(message + "\n")
+    print("HINT: You can drag and drop the file from Windows Explorer.\n")
+    if default is not None: print("Default is \"{}\".\n".format(default))
+    value = input("INPUT: ")
+    print()
+    value = rex.s(value, r'^\s*(.*?)\s*$', r'\1', '=')
+    if default is not None and len(value) == 0: return(default)
+    return(value)
+
+
+
+
+        
 
 def select_one(message, options, default=None):
     """
@@ -97,7 +130,7 @@ def select_mult(message, options, default=[]):
     - default : optional default list, set, or dict (basically any object that supports *in*)
     
     # Returns
-    The set of selected values.
+    The list of selected values.
     """
     rex = Rex()
     if default is None: default = []
@@ -110,7 +143,7 @@ def select_mult(message, options, default=[]):
     message = rex.s(message, r'\s*$', r'', '=')
     def replace_range(m):
         nums = []
-        for r in range(int(m[0]), int(m[2])+1): nums.append(str(r))
+        for r in range(int(m[1]), int(m[3])+1): nums.append(str(r))
         return(', '.join(nums))
     while True:
         print(message + "\n")
@@ -120,7 +153,11 @@ def select_mult(message, options, default=[]):
             print("{:4d}. {} {}".format(n, icon, options[i]))
         print()
         print("Select space delimited options and/or actions: A=All, C=Clear, T=Toggle.\n\nHit <Enter> by itself, or D=Done, to continue.\n")
-        values = input('SELECTION: ')
+        if DEBUG.enable:
+            values = DEBUG.inputs.pop(0)
+            print(values)
+        else:
+            values = input('SELECTION: ')
         print()
         values = rex.s(values, r'(\d+)\s*(\.\.|to|-)\s*(\d+)', replace_range, 'g=')
         values = rex.s(values, r'^\s*(.*?)\s*$', r'\1', 'g=')
@@ -155,10 +192,66 @@ def select_mult(message, options, default=[]):
                 if value == 'D':
                     done = True
         if done: break
-    hash = []
+    all = []
     for i in range(0, i_max):
         if i in selected:
-            hash.append(options[i])
-    return(hash)
+            all.append(options[i])
+    return(all)
 
+def files(message, default=None):
+    rex = Rex()
+    message = rex.s(message, r'\s*$', r'', '=')
+    all_files = []
+    if default is not None:
+        t = type(default)
+        if t == str:
+            all_files.append(default)
+        elif t == list:
+            all_files.extend(default)
+    print(message + "\n")
+    print("INSTRUCTIONS:")
+    print("- Enter files and/or folders, one per line, hitting <Enter> after each entry.")
+    print("- If you specify a folder, all files in the folder will be selected.  You can, however, use wildcards to constrain file selections (e.g. \"C:\\\\Temp\\*.yml\").")
+    print("- Type \"?\" + <Enter> to see the current list of selected files.")
+    print("- Hit <Enter> by itself to terminate file/folder input.  This will display a editable menu of all selected files.")
+    print()
+    print("HINT: Instead of typing or using copy+paste, you can drag and drop files/folders from Windows Explorer.")
+    print()
+    if default is not None: 
+        n = len(all_files)
+        print(f'[{n} file{"" if n == 1 else "s"} initially selected]')
+    print("INPUT:")
+    enable = True
+    while enable:
+        if DEBUG.enable:
+            value = DEBUG.inputs.pop(0)
+            print(value)
+        else:
+            value = input().strip()
+        new_files = []
+        if value == "":
+            break
+        elif value == '?':
+            print('')
+            for i, path in enumerate(all_files):
+                print(f"{i+1:4d}. {path}")
+            print('')
+        elif '*' in value or '?' in value or '[' in value:
+            import glob
+            new_files = [fs.fix(fs.abs(f)) for f in glob.glob(value)]
+        elif fs.isdir(value):
+            new_files = [fs.fix(fs.abs(f)) for f in fs.files(value)]
+        else:
+            new_files.append(fs.fix(fs.abs(value)))
+        add_files = []
+        for f in new_files:
+            if f not in all_files:
+                all_files.append(f)
+                add_files.append(f)
+        n = len(all_files)
+        m = len(add_files)
+        print(f'[{n} file{"" if n == 1 else "s"} selected, +{m}]')
 
+    return select_mult('Select files.', all_files, all_files)
+
+        

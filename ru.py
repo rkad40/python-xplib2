@@ -6,10 +6,97 @@ Python "random utilities" library.
 ```python
 import ru
 ```
-
 """
 
 import random
+import sys
+import os
+
+class CaptureStdout:
+    r'''
+    Send STDOUT to a list.
+
+    ## Usage
+
+    ```python
+    with ru.CaptureStdout() as stream:
+        print('This is a test.')
+        print('This is only a test.')
+    print(stream.data)
+    ```
+
+    This prints `['This is a test.', 'This is only a test.']`.
+    '''
+    def __init__(self):
+        self.data = []
+    def write(self, s):
+        self.data.append(s)
+    def __enter__(self):
+        sys.stdout = self
+        return self
+    def __exit__(self, ext_type, exc_value, traceback):
+        sys.stdout = sys.__stdout__  
+
+class CaptureStderr:
+    r'''
+    Send STDERR to a list.
+    '''
+    def __init__(self):
+        self.data = []
+    def write(self, s):
+        self.data.append(s)
+    def __enter__(self):
+        sys.stderr = self
+        return self
+    def __exit__(self, ext_type, exc_value, traceback):
+        sys.stderr = sys.__stderr__  
+
+def load(name, path=None):
+    r'''
+    Load a module.
+
+    ## Arguments
+    - `name`: Module name (e.g. "foo.bar").
+    - `path`: Module path (e.g. "C:/Python/foo/bar.py").
+
+    Argument `path` is optional.  If name is a valid module accessible from `sys.path`, no `path` is 
+    needed.  If you want to load the module via file path, set `path` to the file path + name 
+    (e.g. "C:/Python/foo/bar.py") and name to any arbitrary Python module-like name (e.g. "foo.bar", 
+    "foobar", "this.is.foobar", etc., etc.).
+
+    Say you want to import the `Foobar()` class from `C:/Python/foo/bar.py`.  You could do something
+    like this:
+
+    ```python
+    foobar = ru.load('foo.bar', 'C:/Python/foo/bar.py')
+    app = foobar.Foobar()
+    ```
+
+    But this also works:
+
+    ```python
+    ru.load('foo.bar', 'C:/Python/foo/bar.py')
+    from foo.bar import Foobar
+    app = Foobar()
+    ```
+
+    ## Aliases
+    - `load()`
+    - `load_module()`
+    - `import_module()`
+    '''
+    if path is None:
+        import importlib
+        mod = importlib.import_module(name)
+    else:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[name] = mod
+        spec.loader.exec_module(mod)
+    return mod    
+load_module = load
+import_module = load
 
 def stype(obj):
     '''
@@ -83,7 +170,7 @@ def trim(s):
     s = rex.s(s, r'^\s*(.*?)\s*$', r'\1', '=')
     return(s)
 
-def squote(s):
+def squote(s, type_check=False, enable=True):
     r"""
     Single quote a string for the purpose of embedding in a quote.
 
@@ -99,17 +186,21 @@ def squote(s):
 
     ## Arguments
     - `s` : string value
+    - `type_check`: if True, make sure value is type `str`; if it is not of type `str` do not quote
+    - `enable`: if True quote string, else don't
 
     ## Returns
     Single quoted string.
     """
+    if not enable: return s
+    if type_check and type(s) != str: return s
     from rex import Rex
     rex = Rex()
     s = rex.s(s, r"'", r"\\'", 'g=')
     s = "'{}'".format(s)
     return s 
 
-def dquote(s):
+def dquote(s, type_check=False, enable=True):
     r"""
     Double quote a string for the purpose of embedding in a quote.
 
@@ -124,17 +215,21 @@ def dquote(s):
 
     ## Arguments
     - `s` : string value
+    - `type_check`: if True, make sure value is type `str`; if it is not of type `str` do not quote
+    - `enable`: if True quote string, else don't
 
     ## Returns
     Double quoted string.
     """
+    if not enable: return s
+    if type_check and type(s) != str: return s
     from rex import Rex
     rex = Rex()
     s = rex.s(s, r'"', r'\\"', 'g=')
     s = '"{}"'.format(s)
     return s 
 
-def quote(s):
+def quote(s, type_check=False, enable=True):
     r"""
     Quote a string for the purpose of embedding in a quote using either single or double quotes, 
     whichever form is not already present in string.  If both are present, defaults to single 
@@ -150,11 +245,15 @@ def quote(s):
     ```
 
     ## Arguments
-    - `s` : string value
+    - `s`: string value
+    - `type_check`: if True, make sure value is type `str`; if it is not of type `str` do not quote
+    - `enable`: if True quote string, else don't
 
     ## Returns
     Quoted string.
     """
+    if not enable: return s
+    if type_check and type(s) != str: return s
     from rex import Rex
     rex = Rex()
     s = str(s)
@@ -444,7 +543,7 @@ def pluralize(word, cnt=2, plural=None):
     if rex.m(val, 'on$'): return word[:-2] + 'a'
     return word + 's'
 
-def create_banner(title, subtitle=None, size=98, border='', font="standard", center=False):
+def create_banner(title, subtitle=None, size=None, border='', font="standard", center=False):
     r"""
     Create a text banner (using Figlet).  
 
@@ -452,7 +551,7 @@ def create_banner(title, subtitle=None, size=98, border='', font="standard", cen
 
     - `title` : title to be printed in Figlet font
     - `subtitle` : optional subtitle text; if multi-line, can be a list of lines or a string with carriage returns
-    - `size` : total size of banner in characters (default 98)
+    - `size` : total size of banner in characters (default is the window width)
     - `border` : optional border character(s) e.g. "#' (default is '' i.e. no border)
     - `font` : Figlet font to use for title (default "standard", for more see http://www.figlet.org/examples.html)
     - `center` : center banner if True, left justify if False
@@ -465,6 +564,11 @@ def create_banner(title, subtitle=None, size=98, border='', font="standard", cen
     banner = pyfiglet.figlet_format(title, font=font)
     if border is None: border = ''
     lines = banner.split('\n')
+    try:
+        if size is None or size == 0:
+            size = os.get_terminal_size().columns - 1
+    except:
+        size = 98
     if center:
         for i in range(0, len(lines)):
             lines[i] = border + lines[i].center(size-2*len(border)) + border
@@ -569,3 +673,22 @@ def die(msg):
     print("\n")
     print(create_banner('ERROR', border='', size=80, font='isometric1'))
     raise Exception(msg)
+
+
+def print_error():
+    '''
+    Print error traceback.
+    '''
+    import traceback
+    traceback.print_exc()
+    print()
+print_errors = print_error
+error = print_error
+
+def pprint(obj):
+    '''
+    Pretty print an object.
+    '''
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(obj)

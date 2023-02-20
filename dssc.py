@@ -183,6 +183,41 @@ class DSSC():
             txt = yaml.safe_dump(data)
             fs.writeif(settings_file, txt)
         exit()
+
+    def getvault(self, path):
+        self.init()
+        cwd = fs.cwd()
+        fs.cd(path)
+        meta = self.getmeta(path)
+        vault = None
+        if meta is not None and len(meta) > 0 and 'Vault' in meta[0]:
+            vault = '/'.join(meta[0]['Vault'].split('/')[0:-1])
+        fs.cd(cwd)
+        return vault
+
+    def getmeta(self, path):
+        self.init()
+        cwd = fs.cwd()
+        fs.cd(path)
+        contents_file = fs.join(path, '.SYNC', 'Contents')
+        if not fs.exists(contents_file): 
+            fs.cd(cwd)
+            return None
+        rex = Rex()
+        headers = None
+        data = []
+        for line in fs.read(contents_file):
+            if not rex.m(line, r'^\<(.*?)\>\s*$', ''): continue
+            items = rex.split(rex.d(1), r'\>\s*\<')
+            if headers is None: 
+                headers = items
+                continue
+            row = {}
+            for i in range(0, min(len(headers), len(items))):
+                row[headers[i]] = items[i]
+            data.append(row)
+        fs.cd(cwd)
+        return data
         
     def setvault(self, path, vault):
         """
@@ -238,6 +273,8 @@ class DSSC():
         if ignore_files is None: ignore_files = []
         if ignore_dirs is None: ignore_dirs = []
         cwd = fs.cwd()
+        if not fs.isdir(path):
+            raise Exception(f'Argument path value "{path}" is not a directory.')
         fs.cd(path)
         args = [self.exe, 'ls']
         if modified: args.append('-modified')
@@ -328,6 +365,20 @@ class DSSC():
         if path is not None:
             fs.cd(cwd)
         return(ci_out)
+
+    def co(self, file, path=None):
+        self.init()
+        cwd = None
+        if path is not None:
+            cwd = fs.cwd()
+            fs.cd(path)
+        args = [self.exe, "co", file]
+        self._print_cmd(args)
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out = proc.communicate()[0].decode()
+        if path is not None:
+            fs.cd(cwd)
+        return out
 
     def _print_cmd(self, args):
         render = []

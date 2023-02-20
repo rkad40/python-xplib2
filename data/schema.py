@@ -8,6 +8,8 @@ Currently the only serialization format supported is YAML.  One restriction is t
 can be validated and rendered.  This means you could not validate or render data objects with nested 
 classes.  
 
+For help see [introduction to schemas](schema-doc.md).
+
 ## History
 
 1.2:
@@ -25,10 +27,14 @@ import json
 from rex import Rex
 import importlib.util as importer
 import textwrap
+import inspect
 
 VERSION = '1.2.0'
 
 TEST = []
+
+class DataManagerFunctionError(Exception):
+    pass
 
 class DataManagerRenderYAMLOptions():
     def __init__(self):
@@ -112,6 +118,7 @@ class DataManager():
     def __init__(self, schema, module_file=None, root_rule_name='root', verbosity=1):
         self.schema = None
         self.root_rule_name = None
+        self.module_spec = None
         self.render = DataManagerRenderOptions()
         self.initialize(schema, module_file, root_rule_name, verbosity)
     
@@ -149,16 +156,34 @@ class DataManager():
         if type(schema) is not dict: raise Exception('Parameter schema is not a dict object.')
         if len(schema) == 0: raise Exception('Parameter schema cannot be an empty dict.')
 
+        self.f = {}
+
         # Identify the root schema rule (will have 'root' attribute set to True).
+        delete_rule_names = []
         for rule_name in self.schema: 
             schema_rule = self.schema[rule_name]
+            if 'class' in schema_rule and schema_rule['class'] == 'func': 
+                if 'code' not in schema_rule:
+                    raise Exception(f'Error in schema rule {schema_rule}: Expected "code" to be defined for "class" value "func".')
+                code = schema_rule['code'].split('\n')
+                for i in range(0, len(code)): code[i] = '  ' + code[i]
+                code.insert(0, f'def {rule_name}(value, info):')
+                code.append(f'self.f["{rule_name}"] = {rule_name}')
+                code = '\n'.join(code)
+                exec(code)
+                delete_rule_names.append(rule_name)
+                continue
+            if 'class' in schema_rule and schema_rule['class'] == 'meta':
+                continue
             if 'root' in schema_rule and bool(schema_rule['root']): 
                 self.root_rule_name = rule_name
         if self.root_rule_name is None and root_rule_name is not None:
             self.root_rule_name = root_rule_name
         if self.root_rule_name is None: raise Exception('A root schema rule was not specified.')
         if not self.root_rule_name in self.schema: raise Exception('Schema rule name "{}" not defined in schema object.'.format(self.root_rule_name))
-        
+        for rule_name in delete_rule_names:
+            del self.schema[rule_name]
+
         # Validate schema recursively starting at self.root_rule_name.
         self.__validate_schema_recursively(self.root_rule_name)
 
@@ -167,14 +192,16 @@ class DataManager():
             rules_not_validated = []
             for rule_name in self.schema:
                 if not rule_name in self.validated_rules:
+                    if 'print-warning' in self.schema[rule_name] and not self.schema[rule_name]['print-warning']:
+                        continue
                     rules_not_validated.append(rule_name)
             number_rules = len(rules_not_validated)
             if number_rules == 1: 
                 if not self.coverage_testing: # pragma: no cover
-                    print('WARNING: Schema rule "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format(rules_not_validated[0]))
+                    print('WARNING: Schema rule "{}" defined but not used. (You can disable this warning globally by setting class variable print_warnings to False or setting the rule definition "print-warning" attribute for this rule to False.)'.format(rules_not_validated[0]))
             elif number_rules > 1:
                 if not self.coverage_testing: # pragma: no cover
-                    print('WARNING: Schema rules "{}" defined but not used. (You can disable this warning by setting class variable print_warnings to False.)'.format('", "'.join(rules_not_validated)))
+                    print('WARNING: Schema rules "{}" defined but not used. (You can disable this warning globally by setting class variable print_warnings to False or individually by setting the each rule\'s definition "print-warning" attribute to False.)'.format('", "'.join(rules_not_validated)))
 
         # Load module if one is defined.
         if module is not None:
@@ -188,7 +215,7 @@ class DataManager():
             # Usage 
                 self.__validate_schema_recursively(self.root_rule_name)
             # Args
-            - rule_name: rule_name to be evaluted
+            - rule_name: rule_name to be evaluated
             # Returns
             Nothing, raises Exception on failure
         '''
@@ -212,35 +239,42 @@ class DataManager():
         # Rule class must must be one of 'str', 'int', 'float', 'list', 
         # 'list', or 'dict'.  Validate the valid and required attributes.  Then 
         # recursively validate all children nodes. 
+        if rule_class == 'func':
+            raise Exception('Fix this?')
+            return()
         if rule_class == 'str':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'default', 'allow-null', 'validation-func', 
-                'comment', 'matches', 'in', 'equals'])
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'default', 
+                'allow-null', 'validation-func', 'comment', 'matches', 'in', 'equals', 'non-empty', 
+                'min-length', 'max-length', 'print-warning', 'meta'])
             self.validated_rules[rule_name] = True
             return()
         if rule_class == 'bool':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'default', 'allow-null', 'validation-func', 
-                'comment'])
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'default', 
+                'allow-null', 'validation-func', 'comment', 'print-warning', 'meta'])
             self.validated_rules[rule_name] = True
             return()
         if rule_class == 'int' or rule_class == 'float':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'min-value', 'max-value', 'default', 
-                'allow-null', 'validation-func', 'comment'])
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['root', 'min-value', 
+                'max-value', 'default', 'allow-null', 'validation-func', 'comment', 'print-warning', 
+                'meta'])
             self.validated_rules[rule_name] = True
             return()
         elif rule_class == 'list':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['rule', 'root', 'min-count', 'max-count', 'comment', 
-                'default', 'render', 'pre-validation-func', 'post-validation-func'])
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['rule', 'root', 
+                'min-count', 'max-count', 'comment', 'default', 'render', 'pre-validation-func', 
+                'post-validation-func', 'print-warning', 'meta', 'padding-before'])
             if 'rule' in schema_rule: self.__validate_schema_recursively(schema_rule['rule'])
             self.validated_rules[rule_name] = True
             return()
         elif rule_class == 'dict':
-            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['keys', 'min-count', 'max-count', 'key-sort-func', 'comment', 'default', 
-                'render', 'root', 'pre-validation-func', 'post-validation-func'])
+            self.__validate_rule_params(schema_rule, rule_name, ['class'], ['keys', 'min-count', 
+                'max-count', 'key-sort-func', 'comment', 'default', 'render', 'root', 
+                'pre-validation-func', 'post-validation-func', 'print-warning', 'meta'])
             i = 0
             if 'keys' in schema_rule:
                 for hash in schema_rule['keys']:
                     self.__validate_rule_params(hash, '{}.keys[{}]'.format(rule_name,i), ['name', 'rule'], ['root', 'comment', 
-                        'required', 'regx', 'default'])
+                        'required', 'regx', 'default', 'meta', 'padding-before', 'padding-after'])
                     if 'rule' in hash: self.__validate_schema_recursively(hash['rule'])
                     i += 1
             self.validated_rules[rule_name] = True
@@ -375,23 +409,19 @@ class DataManager():
 
             # If an interposer function is specified, call it.  
             if 'validation-func' in schema_rule:
-                func_name = schema_rule['validation-func']
-                try:
-                    arg = \
-                    {
-                        'object': self,
-                        'data': self.data_object,
-                        'rule': rule_name,
-                        'node': node,
-                        'nodes': nodes.copy(),
-                        'depth': rule_name,
-                        'parent': parent,
-                        'parent_class': parent_class,
-                    }
-                    data = self.module_spec.__dict__[func_name](data, arg)
-                except Exception as e:
-                    error = re.sub(r'\s*(\.\?\!)', '', str(e)) 
-                    raise Exception(error + " at {}.".format(node))
+                func = schema_rule['validation-func']
+                arg = \
+                {
+                    'object': self,
+                    'data': self.data_object,
+                    'rule': rule_name,
+                    'node': node,
+                    'nodes': nodes.copy(),
+                    'depth': rule_name,
+                    'parent': parent,
+                    'parent_class': parent_class,
+                }
+                data = self.call(func, data, arg)
 
             # If 'min-value' attribute is defined, ensure that the value is greater than or equal
             # to the value indicated.
@@ -424,6 +454,21 @@ class DataManager():
                 if data not in schema_rule['in']:
                     raise Exception('{} object {} = "{}" not in [{}].'.format(object_type, node, data, '"' + '", "'.join(schema_rule['in']) + '"'))
 
+            # If 'non-empty' attribute is defined, ensure that the value is not empty.
+            if 'non-empty' in schema_rule:
+                if bool(schema_rule['non-empty']) and len(data) == 0:
+                    raise Exception(f'{object_type} object {node} = "{data}" invalid.  Empty value not allowed.')
+
+            # If 'min-length' attribute is defined, ensure that the value has length >= specified value.
+            if 'min-length' in schema_rule:
+                if len(data) < schema_rule['min-length']:
+                    raise Exception(f'{object_type} object {node} = "{data}" invalid.  Min length is {schema_rule["min-length"]}.')
+
+            # If 'max-length' attribute is defined, ensure that the value has length <= specified value.
+            if 'max-length' in schema_rule:
+                if len(data) < schema_rule['max-length']:
+                    raise Exception(f'{object_type} object {node} = "{data}" invalid.  Max length is {schema_rule["max-length"]}.')
+
             # If 'equals' attribute is defined, ensure that the value equals the value specified.
             if 'equals' in schema_rule:
                 if not data == schema_rule['equals']:
@@ -440,24 +485,20 @@ class DataManager():
 
             # If an interposer function is specified, call it.  
             if 'pre-validation-func' in schema_rule:
-                func_name = schema_rule['pre-validation-func']
-                try:
-                    arg = \
-                    {
-                        'object': self,
-                        'data': self.data_object,
-                        'rule': rule_name,
-                        'node': node,
-                        'nodes': nodes.copy(),
-                        'depth': rule_name,
-                        'parent': parent,
-                        'parent_class': parent_class,
-                    }
-                    data = self.module_spec.__dict__[func_name](data, arg)
-                except Exception as e:
-                    error = re.sub(r'\s*(\.\?\!)', '', str(e)) 
-                    raise Exception(error + " at {}.".format(node))
-            
+                func = schema_rule['pre-validation-func']
+                arg = \
+                {
+                    'object': self,
+                    'data': self.data_object,
+                    'rule': rule_name,
+                    'node': node,
+                    'nodes': nodes.copy(),
+                    'depth': rule_name,
+                    'parent': parent,
+                    'parent_class': parent_class,
+                }
+                data = self.call(func, data, arg)
+                
             # If 'min-count' attribute is defined, ensure that number of elements is greater than or
             # equal to the value indicated.
             if 'min-count' in schema_rule:
@@ -492,24 +533,19 @@ class DataManager():
 
                 # If an interposer function is specified, call it.  
                 if 'post-validation-func' in schema_rule:
-                    func_name = schema_rule['post-validation-func']
-                    try:
-                        arg = \
-                        {
-                            'object': self,
-                            'data': self.data_object,
-                            'rule': rule_name,
-                            'node': node,
-                            'nodes': nodes.copy(),
-                            'depth': rule_name,
-                            'parent': parent,
-                            'parent_class': parent_class,
-                        }
-                        data = self.module_spec.__dict__[func_name](data, arg)
-                    except Exception as e:
-                        error = re.sub(r'\s*(\.\?\!)', '', str(e)) 
-                        raise Exception(error + " at {}.".format(node))
-
+                    func = schema_rule['post-validation-func']
+                    arg = \
+                    {
+                        'object': self,
+                        'data': self.data_object,
+                        'rule': rule_name,
+                        'node': node,
+                        'nodes': nodes.copy(),
+                        'depth': rule_name,
+                        'parent': parent,
+                        'parent_class': parent_class,
+                    }
+                    data = self.call(func, data, arg)
                 return(None)
 
             if data_type == list:
@@ -549,9 +585,18 @@ class DataManager():
                     for data_key in sorted(data.keys()):
                         match_found = False
                         # Cycle through all valid_keys_hashes and try to find a match for data_key.
+                        all_rule_keys = []
+                        word_rule_keys = []
                         for dict_valid_key_hash in schema_rule['keys']:
                             rule_key = dict_valid_key_hash['name']
-                            is_regx = True if 'regx' in dict_valid_key_hash and bool(dict_valid_key_hash['regx']) else False
+                            is_regx = False 
+                            if 'regx' in dict_valid_key_hash and bool(dict_valid_key_hash['regx']):
+                                is_regx = True
+                            if is_regx:
+                                all_rule_keys.append(f'/{rule_key}/')
+                            else:
+                                word_rule_keys.append(rule_key)
+                                all_rule_keys.append(ru.dquote(rule_key))
                             if (not is_regx and data_key == rule_key) or (is_regx and re.search(rule_key, data_key)):
                                 if not is_regx and data_key in required_key_not_yet_processed: del required_key_not_yet_processed[data_key]
                                 child_node = '{}'.format(node)
@@ -565,7 +610,13 @@ class DataManager():
                                     if not rval is None: data[data_key] = rval
                                 match_found = True
                                 break
-                        if not match_found: raise Exception('Invalid entry "{}" found at node {}.'.format(data_key, node))
+                        if not match_found:  
+                            msg = f'Invalid entry "{data_key}" found at node {node}.'
+                            if len(all_rule_keys) > 1:
+                                msg += f' Must be one of: {ru.join_items(all_rule_keys, last_join=" or ")}.'
+                            if len(word_rule_keys) > 0:
+                                msg += ' Did you mean ' + ru.join_items(ru.similar_words(data_key, word_rule_keys), last_join=' or ', quote_items=True) + '?'
+                            raise Exception(msg)
 
                 # Are there any required_key_not_yet_processed entries?  If so, flag them as exceptions.
                 required_keys = list(required_key_not_yet_processed.keys())
@@ -577,24 +628,19 @@ class DataManager():
 
                 # If an interposer function is specified, call it.  
                 if 'post-validation-func' in schema_rule:
-                    func_name = schema_rule['post-validation-func']
-                    try:
-                        arg = \
-                        {
-                            'object': self,
-                            'data': self.data_object,
-                            'rule': rule_name,
-                            'node': node,
-                            'nodes': nodes.copy(),
-                            'depth': rule_name,
-                            'parent': parent,
-                            'parent_class': parent_class,
-                        }
-                        data = self.module_spec.__dict__[func_name](data, arg)
-                    except Exception as e:
-                        error = re.sub(r'\s*(\.\?\!)', '', str(e)) 
-                        raise Exception(error + " at {}.".format(node))
-
+                    func = schema_rule['post-validation-func']
+                    arg = \
+                    {
+                        'object': self,
+                        'data': self.data_object,
+                        'rule': rule_name,
+                        'node': node,
+                        'nodes': nodes.copy(),
+                        'depth': rule_name,
+                        'parent': parent,
+                        'parent_class': parent_class,
+                    }
+                    data = self.call(func, data, arg)
                 return(None)
 
             if data_type == dict:
@@ -620,7 +666,8 @@ class DataManager():
         self.lines = []
 
         # Add document separator ("---") if requested.
-        if self.render.yaml.add_document_separator: self.lines.append('---' + "\n")
+        if self.render.yaml.add_document_separator: 
+            self.lines.append('---\n')
         
         # Output recurse.
         self.__to_yml_recurse(data, None, rule_name, rule_name, [], 0)
@@ -648,6 +695,9 @@ class DataManager():
                 for i in remove_line_index: self.lines.pop(i)
 
         # Return the data.
+        if (len(self.lines) == 1):
+            if self.lines[0] == '--- {}\n': self.lines[0] = '--- \n{}\n'
+            elif self.lines[0] == '--- []\n': self.lines[0] = '--- \n[]\n'
         return("".join(self.lines))
     
     ##########
@@ -715,7 +765,7 @@ class DataManager():
                     comment = comment_arg
                     if comment.endswith('()'):
                         comment_temp = comment.replace('()', '')
-                        if comment_temp.isidentifier():
+                        if self.module_spec is not None and comment_temp.isidentifier():
                             comment = self.module_spec.__dict__[comment_temp](parent_data_key, data)
                 comment = rex.s(comment, r'\n\s*$', '', '=')
                 comment_lines = rex.split(comment, r'\n')
@@ -824,17 +874,41 @@ class DataManager():
                                 value = data[data_key]
                                 value_type = ru.stype(value)
                                 if value_type == 'bool':
-                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + ", "
-                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + "\n")
+                                    if collapse: 
+                                        self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + ", "
+                                    else: 
+                                        if 'padding-before' in valid_key_hash and valid_key_hash['padding-before']:
+                                            self.lines.append('\n')
+                                        if 'comment' in valid_key_hash:
+                                            self.lines.append((tab * depth) + f'''# {valid_key_hash['comment']}''' + "\n")
+                                        self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(bool(value)).lower() + "\n")
                                 elif value_type == 'int' or value_type == 'float':
-                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(value) + ", "
-                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(value) + "\n")
+                                    if collapse: 
+                                        self.lines[-1] += self.__yml_quote_key(data_key) + ": " + str(value) + ", "
+                                    else: 
+                                        if 'padding-before' in valid_key_hash and valid_key_hash['padding-before']:
+                                            self.lines.append('\n')
+                                        if 'comment' in valid_key_hash:
+                                            self.lines.append((tab * depth) + f'''# {valid_key_hash['comment']}''' + "\n")
+                                        self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + str(value) + "\n")
                                 elif value_type == 'str':
-                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": " + self.__yml_quote_data_collapsed(value, depth) + ", "
-                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + self.__yml_quote_data(value, depth) + "\n")
+                                    if collapse: 
+                                        self.lines[-1] += self.__yml_quote_key(data_key) + ": " + self.__yml_quote_data_collapsed(value, depth) + ", "
+                                    else: 
+                                        if 'padding-before' in valid_key_hash and valid_key_hash['padding-before']:
+                                            self.lines.append('\n')
+                                        if 'comment' in valid_key_hash:
+                                            self.lines.append((tab * depth) + f'''# {valid_key_hash['comment']}''' + "\n")
+                                        self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + self.__yml_quote_data(value, depth) + "\n")
                                 else:
-                                    if collapse: self.lines[-1] += self.__yml_quote_key(data_key) + ": "
-                                    else: self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + "\n")
+                                    if collapse: 
+                                        self.lines[-1] += self.__yml_quote_key(data_key) + ": "
+                                    else: 
+                                        if 'padding-before' in valid_key_hash and valid_key_hash['padding-before']:
+                                            self.lines.append('\n')
+                                        if 'comment' in valid_key_hash:
+                                            self.lines.append((tab * depth) + f'''# {valid_key_hash['comment']}''' + "\n")
+                                        self.lines.append((tab * depth) + self.__yml_quote_key(data_key) + ": " + "\n")
                                     self.__to_yml_recurse(value, data_key, child_rule_name, child_node, child_nodes, depth + 1, collapse)
                                 number_of_entries += 1
                 else:
@@ -979,5 +1053,53 @@ class DataManager():
             value = "'" + value + "'"
         return(value)
 
-
+    def call(self, func, data, arg=None):
+        node = ''
+        try:
+            node = f" at node {arg['node']}" 
+        except:
+            pass
+        inst = """You must do one of the following: (1) Pass the function itself and NOT the function's string name. (2) Pass the file name containing the function to DataManager() using the module_file attribute. (3) Specify the function string name + " in " + the file name containing the function (e.g. "my_func in some_script.py")."""
+        try:
+            if inspect.isfunction(func):
+                return func(data, arg)
+            elif type(func) == str:
+                rex = Rex()
+                if func in self.f:
+                    return self.f[func](data, arg)
+                # String of the form "foobar in C:/Temp/Funcs.py"
+                if rex.m(func, r'\s+in\s+') and rex.m(func, r'\.py$', 'i'):
+                    # `parts` = ['foobar', 'C:/Temp/Funcs.py'].
+                    parts = rex.split(func, r'\s+in\s+', '', 2)
+                    # `func` = 'foobar'
+                    func = parts[0]
+                    # `file` = 'C:/Temp/Funcs.py'
+                    file = fs.fix(parts[1])
+                    # If file doesn't exist, 
+                    if not fs.exists(file):
+                        if not fs.isabs(file):
+                            temp_file = fs.join(fs.scriptdir(), file)
+                        if fs.exists(temp_file):
+                            file = temp_file
+                    if not fs.exists(file):
+                        raise DataManagerFunctionError(f"""File "{file}" does not exist.""")
+                    # Create the module name (e.g. `module_name` = 'c.temp.funcs').
+                    module_name = fs.rmext(file).lower()
+                    module_name = rex.s(module_name, r'\W+', '.', 'g=')
+                    module_name = rex.s(module_name, r'^\W+', '.', 'g=')
+                    module_name = rex.s(module_name, r'\W+$', '.', 'g=')
+                    import importlib, sys
+                    spec = importlib.util.spec_from_file_location(module_name, file)
+                    foo = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = foo
+                    spec.loader.exec_module(foo)
+                    return getattr(foo, func)(data, arg)
+                if self.module_spec is None:
+                    raise DataManagerFunctionError(f"""Could not run validation function {func}{node}.  {inst}""")
+                return self.module_spec.__dict__[func](data, arg)
+        except DataManagerFunctionError as err:
+            raise Exception(f"""Could not run validation function {func}{node}.  {err}  {inst}""")
+        except Exception as err:
+            raise Exception(f"""Error in {func}{node}: {err}""")
+        return data
 

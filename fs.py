@@ -222,7 +222,7 @@ rmdir = delete_dir
 # ddelete = delete_dir
 # ddel = delete_dir
 
-def write_file_if_changed(path, content, create_dir=True, simple=False, mode=None, encoding='utf-8'):
+def write_file_if_changed(path, content, name=None, create_dir=True, simple=False, mode=None, encoding='utf-8'):
   '''
     ## Description
     Write a file only if it results in a change.
@@ -236,9 +236,11 @@ def write_file_if_changed(path, content, create_dir=True, simple=False, mode=Non
     ## Arguments
     - `path`: file as str
     - `content`: content to write to file
+    - `name`: file name to use for reporting (default is to use `path`)
     - `create_dir`: create base dir if it does not already exist (default = True)
     - `simple`: if True, return simple status string (e.g. "created", "identical", or "updated"); if False, return bool (True if copied, False otherwise)
     - `mode`: assert file mode (default = None)  
+    - `encoding`: file encoding (default = 'utf-8')
     
     ## Aliases
     `write_file_if_changed`, `fwriteif`, `writeif`
@@ -247,6 +249,7 @@ def write_file_if_changed(path, content, create_dir=True, simple=False, mode=Non
     A string indicating the action that was performed.
   '''  
   try:
+    if name is None: name = path
     dir_name = get_dir_name(path)
     if create_dir == True and not dir_exists(dir_name): 
       dir_mode = mode if mode is not None else 0x755
@@ -257,18 +260,18 @@ def write_file_if_changed(path, content, create_dir=True, simple=False, mode=Non
       write_file(path, content, encoding=encoding)
       if mode is not None: os.chmod(path, mode)
       if simple: return('created')
-      else: return('Created new file "{}".'.format(path))
+      else: return('Created new file "{}".'.format(name))
     else:
       temp_file = join_names(get_dir_name(path), '.' + get_root_name(path) + '-' + str(time.time()) + '.' + get_ext(path))
       write_file(temp_file, content, encoding=encoding)
       if files_are_identical(temp_file, path):
         delete_file(temp_file)
         if simple: return('identical')
-        else: return('No change to file "{}".'.format(path))
+        else: return('No change to file "{}".'.format(name))
       else:
         shutil.move(temp_file, path)
         if simple: return('updated')
-        else: return('Updated file "{}".'.format(path))
+        else: return('Updated file "{}".'.format(name))
   except Exception as err:
     if path is None: raise Exception(f'''Required path variables not defined: {err}''')
     raise Exception(f'''Could not write file "{path}": {err}''')
@@ -467,7 +470,6 @@ def remove_ext(path):
   except Exception as err:
     if path is None: raise Exception(f'''Required path variables not defined: {err}''')
     raise Exception(f'''Could not remove extension from "{path}": {err}''')
-
 
 rmext = remove_ext
 
@@ -721,7 +723,7 @@ def get_app_data_path():
     `get_app_data_path`, `appdata`
 
     ## Returns
-    absolute path to %APPDATA%
+    Absolute path to %APPDATA%
   '''
   try:
     return(get_abs_path(os.getenv('APPDATA')))
@@ -986,7 +988,7 @@ def get_abs_path(path, basepath=None):
 
 abs = get_abs_path
 
-def get_files(paths,regx=r'.*',rec=True,must_exist=True):
+def get_files(paths, regx=r'.*', rec=True, must_exist=True, func=None):
   '''
     ## Description
     Yield matching files in specified path(s) as generator object.
@@ -1005,6 +1007,7 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
     - `path`: a single path of type str -OR- a list of paths each of type str
     - `regx`: regular expression matching file name (default = '.*')
     - `rec`: recursive files search if True (default = True).
+    - `func`: function called on each matching file (can be used to modify the file name)
 
     ## Aliases
     `get_files`, `files`
@@ -1022,14 +1025,17 @@ def get_files(paths,regx=r'.*',rec=True,must_exist=True):
         dirs # Not used, included on line to remove lint error.
         for file in files:
           if not re.search(regx, file): continue
-          yield(os.path.join(root,file))
+          file = fix(os.path.join(root,file))
+          if func is not None:
+            file = func(file)
+          yield(file)
         if not rec: break
   except Exception as err:
     raise Exception(f'''Could not get files for specified path(s): {paths}. {err}''')
   
 files = get_files
 
-def get_dirs(paths,regx=r'.*'):
+def get_dirs(paths, regx=r'.*'):
   '''
     ## Description
     Yield matching directories in specified path(s) as generator object.
@@ -1094,7 +1100,7 @@ def create_dir(path, mode=0x775):
     else:
       return("Directory \"{}\" already exists.".format(path))
   except Exception as err:
-    raise Exception(f'''Could create directory "{path}": {err}''')
+    raise Exception(f'''Could not create directory "{path}": {err}''')
 
 
 mkdir = create_dir
@@ -1136,6 +1142,7 @@ def files_are_identical(file1, file2, rstrip=False):
 
 fsame = files_are_identical
 same = files_are_identical
+identical = files_are_identical
 
 def copy_file(src, tar, create_dirs=False, meta=False):
   '''
@@ -1151,6 +1158,7 @@ def copy_file(src, tar, create_dirs=False, meta=False):
     ## Arguments
     - `src`: source file
     - `tar`: target file
+    - `create_dirs`: create directory
     - `meta`: copy meta data and permissions
 
     ## Aliases
@@ -1290,7 +1298,7 @@ def copy_dir_if_changed(src, tar, omit=None, verbose=0, meta=False):
     return '\n'.join(results)
   except Exception as err:
     raise Exception(f'''Error trying to copy "{src}" to "{tar}": {err}''')
-
+copydirif = copy_dir_if_changed
 dcopy = copy_dir_if_changed    
 
 def copy_file_if_changed(src, tar, create_dirs=False, meta=False, rstat=True, simple=False):

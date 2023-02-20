@@ -105,7 +105,7 @@ class Rex():
                 # Cycle through all group sets (note the use of the 'g' option)
                 while rex.d(0) is not None:
                     # Print "$2: $3" (but with $2 capitalized)
-                    print(f'{rex.d(2).capitalize()}: {rex.d(3)})
+                    print(f'{rex.d(2).capitalize()}: {rex.d(3)}')
                     rex.next()
             ```
 

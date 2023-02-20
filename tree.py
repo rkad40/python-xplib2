@@ -1,15 +1,22 @@
 r"""
-## Description
+Display a document tree.  
 
-Create unicode text rendering of directory structure trees.
+## Usage
+
+```python
+tree = Tree(r'C:\Work\Top', skip=[r'^\.', r'\.bak$'], regx=True) 
+print(str(tree))
+```
+
+Or on the command line:
+
+```
+python .\tree.py --path . --skip "^__" "\.pyc$"
+```
 """
 
 import fs
-import yaml, json
 from rex import Rex
-
-rex = Rex()
-rex.split
 
 class StyleBasicUnicode():
     NODE_SPAN_NS   = "│  "
@@ -41,30 +48,53 @@ class StyleBasicASCII():
 
 class Tree():
 
-    def __init__(self, dir=dir, hide=None, regexp=True, ign_case=False, style=None):
+    def __init__(self, data=None, skip=None, regx=True, ign_case=False, style=None):
+        r'''
+        Display a document tree.  
+
+        ## Usage
+
+        ```python
+        tree = Tree(r'C:\Work\Top', skip=[r'^\.', r'\.bak$'], regx=True) 
+        print(str(tree))
+        ```
+
+        ## Arguments
+        - `data`: String directory path from which the document tree begins or a dictionary object.
+        - `skip`: Single str file name or iterable object of file names to skip (default=None).
+        - `regx`: If True, `skip` items are treated as regular expressions (default=True).
+        - `ign_case`: If True, `skip` ignores case.
+        - `style`: `StyleBasicUnicode` or `StyleBasicASCII` (default=`StyleBasicUnicode`).
+        '''
         me = self 
         me.style = style if style is not None else StyleBasicUnicode
-        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=style)
+        me.reset(skip=skip, regx=regx, ign_case=ign_case, style=style)
+        if data is not None:
+            t = type(data)
+            if t == dict:
+                self.from_dict(data, skip, regx, ign_case, style)
+            elif t == str:
+                self.from_path(data, skip, regx, ign_case, style)
 
-    def reset(self, hide=None, regexp=True, ign_case=False, style=None):
+    def reset(self, skip=None, regx=True, ign_case=False, style=None):
         me = self
-        me.hide = hide
-        me.regexp = regexp
+        me.skip = skip
+        me.regx = regx
         me.ign_case = ign_case
         me.style = style if style is not None else StyleBasicUnicode
         me.tree = []
-        if me.hide is None: me.hide = []
-        if type(me.hide) is str: me.hide = [me.hide]
+        if me.skip is None: me.skip = []
+        if type(me.skip) is str: me.skip = [me.skip]
 
-    def from_path(self, dir, hide=None, regexp=True, ign_case=False, style=None):
+    def from_path(self, dir, skip=None, regx=True, ign_case=False, style=None):
         me = self
-        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=me.style)
+        me.reset(skip=skip, regx=regx, ign_case=ign_case, style=me.style)
         me.__recursive_path_descent(dir)
 
-    def from_dict(self, data, name='Top', hide=None, regexp=True, ign_case=False, style=None):
+    def from_dict(self, data, name='Top', skip=None, regx=True, ign_case=False, style=None):
         me = self
         me.name = name
-        me.reset(hide=hide, regexp=regexp, ign_case=ign_case, style=me.style)
+        me.reset(skip=skip, regx=regx, ign_case=ign_case, style=me.style)
         me.__recursive_data_descent(data)
 
     def __recursive_path_descent(self, dir, indent=''):
@@ -89,22 +119,22 @@ class Tree():
                 name = fs.get_file_name(path)
                 # If `ign_case` is True, then convert `name` to lower case.
                 if me.ign_case: name = name.lower()
-                # If `hide` parameter list has elements, process them ...
-                if len(me.hide) > 0:
-                    # Hide elements are regular expressions if `regexp` is True ...
-                    if me.regexp:
+                # If `skip` parameter list has elements, process them ...
+                if len(me.skip) > 0:
+                    # Skip elements are regular expressions if `regx` is True ...
+                    if me.regx:
                         omit = False
-                        for hide in me.hide:
-                            if me.ign_case: hide = hide.lower()
-                            if rex.m(name, hide): omit = True
+                        for skip in me.skip:
+                            if me.ign_case: skip = skip.lower()
+                            if rex.m(name, skip): omit = True
                         # If subfolder or file is not omitted, push onto `lst`.
                         if not omit: lst.append(path)
-                    # ... otherwise hide elements are literals.  
+                    # ... otherwise skip elements are literals.  
                     else:
                         omit = False
-                        for hide in me.hide:
-                            if me.ign_case: hide = hide.lower()
-                            if hide not in name: omit = True
+                        for skip in me.skip:
+                            if me.ign_case: skip = skip.lower()
+                            if skip not in name: omit = True
                         # If subfolder or file is not omitted, push onto `lst`.
                         if not omit: lst.append(path)
                 # ... automatically push onto `lst`.
@@ -158,22 +188,22 @@ class Tree():
                 name = path
                 # If `ign_case` is True, then convert `name` to lower case.
                 if me.ign_case: name = name.lower()
-                # If `hide` parameter list has elements, process them ...
-                if len(me.hide) > 0:
-                    # Hide elements are regular expressions if `regexp` is True ...
-                    if me.regexp:
+                # If `skip` parameter list has elements, process them ...
+                if len(me.skip) > 0:
+                    # Skip elements are regular expressions if `regx` is True ...
+                    if me.regx:
                         omit = False
-                        for hide in me.hide:
-                            if me.ign_case: hide = hide.lower()
-                            if rex.m(name, hide): omit = True
+                        for skip in me.skip:
+                            if me.ign_case: skip = skip.lower()
+                            if rex.m(name, skip): omit = True
                         # If subfolder or file is not omitted, push onto `lst`.
                         if not omit: lst.append(path)
-                    # ... otherwise hide elements are literals.  
+                    # ... otherwise skip elements are literals.  
                     else:
                         omit = False
-                        for hide in me.hide:
-                            if me.ign_case: hide = hide.lower()
-                            if hide not in name: omit = True
+                        for skip in me.skip:
+                            if me.ign_case: skip = skip.lower()
+                            if skip not in name: omit = True
                         # If subfolder or file is not omitted, push onto `lst`.
                         if not omit: lst.append(path)
                 # ... automatically push onto `lst`.
@@ -210,3 +240,26 @@ class Tree():
     def __repr__(self): 
         me = self
         return('\n'.join(me.tree))
+
+if __name__ == '__main__':
+    import argparse
+    import pyperclip
+    import ru
+
+    print(ru.create_banner('Directory Tree', border="#", center=True))
+
+    parser = argparse.ArgumentParser(description='Copy Tree to Clipboard')
+    parser.add_argument('--skip', '-s', dest='skip', default=[], nargs="*", type=str, help='Single str file name or iterable object of file names to skip (default=None).')
+    parser.add_argument('--no-regx', '-R', dest='no_regx', action='store_true', default=False, help='Treat skip items as literals instead of regular expressions (default=False)')
+    parser.add_argument('--ign-case', '--icase', '--ign', '-i', dest='ign_case', action='store_true', default=False, help='Ignore case for skip items (default=True)')
+    parser.add_argument('--path', dest='path', help='Directory path.')
+    args = parser.parse_args()
+
+    tree = str(Tree(args.path, skip=args.skip, regx=not(args.no_regx), ign_case=args.ign_case))
+    print(tree)
+    print('')
+    pyperclip.copy(tree)
+
+    print('NOTE: Tree copied to clipboard.')
+
+
